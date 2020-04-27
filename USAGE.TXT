@@ -1,0 +1,142 @@
+###############################################################################
+		Large Unstructured NEtwork Simulator (LUNES)
+based on the Advanced RTI System, ARTÌS			http://pads.cs.unibo.it
+###############################################################################
+		
+©Copyright 2017					Gabriele D'Angelo
+	
+	Department of Computer Science and Engineering
+	University of Bologna
+
+----------------------------------------------------------------------------
+
+The scripts to be executed in order to use the program are the following:
+
+- make-corpus
+#	usage:
+#		./make-corpus <#NODES> <#EDGES> <MAX_DIAMETER>
+#		mandatory input parameters:
+#		<#NODES>		number of nodes in the networks to be generated
+#		<#EDGES>		number of edges for each node
+#		<MAX_DIAMETER>		max diameter of the generated graphs
+#
+#		example: ./make-corpus 100 2 8
+#			It generates a corpus (NUMBERRUNS) graphs each one composed
+#			of 100 nodes, each node will have 2 edges, and each graph will
+#			have a diameter less or equal to 8
+
+- run-bitcoin
+
+#       usage:
+#       	./run-bitcoin --nodes|-n #SMH [--test|-t TESTNAME] [--debug|-d DEBUGCMD]"
+#		mandatory input parameters:
+#		-n		number of nodes in the networks
+#               optional parameters:
+#		-t		attack to be performed. The options are 51 for 51% attack, selfish for selfish mining attack, dos for denial of service attack
+#               -d              debugger to use, i.e. gdb
+#		
+#		example: ./run-bitcoin -n 500 -t 51
+#		It simulates the 51% attack on a network of 500 nodes
+#
+
+
+- 
+
+
+WARNING: to work correctly LUNES needs a lot of disk space for
+   	 trace files and temporary files that are used for the performance
+	 evaluation tasks. The simulator expects to find a directory
+	 called "/srv/lunes" with the appropriate permissions.
+	 This directory, such as many other settings, can be changed
+	 modifying the "scripts_configuration.sh" configuration file.
+
+The "scripts_configuration.sh" file provides all the basic configuration
+that can be modified for the performance evaluation but take care that
+this "default values" are often superseded by the specific setups that
+are placed in the runtime scripts. 
+
+----------------------------------------------------------------------------
+
+Note: for all the tuning aspects related to the ARTÌS/GAIA simulator
+please see its specific documentation:
+http://pads.cs.unibo.it/dokuwiki/doku.php?id=pads:gaia-apis
+
+1)	(GAIA specific)
+	MIGRATION variable, allowed settings:
+
+	MIGR_OFF		        0
+	MIGR_ON			1	
+	MIGR_E1			1	legacy algorithm
+	MIGR_E2			2	new algorithm, time-based
+	MIGR_E3			3	new algorithm, event-based
+
+2)	(LUNES-bitcoin specific)
+	DISSEMINATION modes for new and routed messages:
+
+	BROADCAST 			0
+	GOSSIP_FIXED_PROB 		1
+	GOSSIP_FIXED_FANOUT 		2 (not implemented in this version)
+	UP_AND_DOWN			3 (not implemented in this version)
+	ADAPTIVE_GOSSIP			4 (adaptive "node", alg. #1)
+	ADAPTIVE_GOSSIP_SENDER		5 (adaptive "sender", alg. #2)
+	ADAPTIVE_GOSSIP_SPECIFIC	6 (adaptive "specific", alg. #3)
+	DEGREE_DEPENDENT_GOSSIP		7
+
+3)	(GAIA specific)
+	MFACTOR, migration factor (default value is 3)
+
+4)	(GAIA specific)
+	LOAD, load balancing control
+
+	OFF			0	
+	ON			1
+
+5)	(LUNES specific)
+	MAX_TTL, maximum time-to-live for messages in the network
+
+6)	(LUNES specific)
+	Based on the dissemination mode:
+	- 	BROADCAST: 			BROADCAST_PROB_THRESHOLD
+		probability threshold of the probabilistic broadcast dissemination
+
+	-	GOSSIP_FIXED_PROB: 		FIXED_PROB_THRESHOLD
+		probability threshold of the fixed probability dissemination
+
+	-	ADAPTIVE_GOSSIP: 		FIXED_PROB_THRESHOLD
+		all the implemented adaptive gossip dissemination algorithms are
+		based on the fixed probability dissemination with some modifications
+		(e.g. stimuli). Therefore, also this kind of algorithm uses the same
+		baseline probability threshold of the fixed probability dissemination
+	-	DEGREE_DEPENDENT_GOSSIP:	PFUNC, FUNC_COEFF
+		the Degree-dependent Dynamic Gossip is based on a probability
+		function that can be tuned using a specific coefficient. 
+		Implemented functions:
+			1	Degree Dependent Function 1
+			2	Degree Dependent Function 2	
+		More information on the functions can be found in:
+		http://arxiv.org/abs/1507.08417
+
+7)	(LUNES specific)
+	churn control: (not implemented in this version)
+		CHURN_MU	probability to move from the alive state to the death one
+				expressed as an int value in the range [0, 100]
+				example: 0 means no deaths
+
+		CHURN_LAMBDA	probability to move from the death state to the alive one
+				expressed as an int value in the range [0, 100]
+
+8)	(LUNES specific)	
+	CACHE SIZE, number of slots used to cache messages
+		warning: the max size is defined using the hard-coded constant
+			MAX_CACHE_SIZE defined in "lunes_constants.h"
+
+9)	(LUNES specific)
+	FREERIDER, probability that a node is a free-rider
+		warning: must be in the range [0,1]
+
+----------------------------------------------------------------------------
+USAGE EXAMPLE
+----------------------------------------------------------------------------
+
+
+----------------------------------------------------------------------------
