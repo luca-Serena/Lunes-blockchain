@@ -1,0 +1,26 @@
+# SIMULATION CHANNELS DEFINITION
+#
+#
+# LP_NAME -> LP_ID ASSOCIATIONS
+# :LP_NAME_X    LP_ID_1
+# :LP_NAME_Y    LP_ID_2
+#
+#------------------------------------------
+
+
+
+#------------------------------------------
+#
+# GLOBAL_LA=
+#       > 0 ->  Global Simulation LookAhead OR STEP
+#               definition for Timestepped Simulation
+#       = 0 ->  Single channel LookAhead definition
+#
+# SINGLE LOOKAHEAD DEFINITION
+# LP_0:         OUT_1 LA_1      OUT_2  LA_2
+# LP_1:         OUT_1 LA_1      OUT_2  LA_2
+#
+#------------------------------------------
+
+
+GLOBAL_LA=1        # Global LookAhead

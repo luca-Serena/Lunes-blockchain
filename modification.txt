@@ -1,0 +1,30 @@
+LUNES
+
+Le modifiche effettuate su LUNES sono state:
+- l'implementazione di dandelion tra i vari protocolli di gossip
+- l'aggiunta dei file sim-metrics-dandelion-corpus e sim-metrics-dandelion per l'esecuzione del protocollo
+
+
+LUNES-bitcoin
+
+Nel progetto è stata definita la macro #FORKING che se definita in sim-parameters.h consente di eseguire la versione di LUNES-Bitcoin in cui sono ammesse le biforcazioni.
+Nella struttura block sono stati aggiunti i campi prevId e position, che servono a indicare rispettivamente l'id del blocco precedente e la posizione del blocco nella catena di riferimento. Nella versione precedente il campo id aveva la stessa funzionalità sia di position sia dell'indice all'interno della lista di blocchi.
+Nella struttura static_data_t è stato invece aggiunto heads, un array di blocchi che rappresenta i blocchi testa del sistema. L'array avrà dimensione n, quando si crea la n+1 esima biforcazione il blocco testa della catena più corta sarà sostituito con quello della nuova biforcazione. Si perde così progressivamente traccia delle biforcazioni minori che non vengono poi continuate.
+Quando viene creato un blocco nella versione col FORKING questo viene aggiunto alla catena più lunga.
+Quando viene ricevuto un nuovo blocco B lo si inserisce nella blockchain e poi:
+	- se B è il primo blocco della catena si aggiunge B alla lista di blocchi testa
+	- se P, il blocco precedente di B, è nella blockchain ed è un blocco testa allora si inserisce B al posto di P tra i blocchi testa
+	- se P è nella blockchain ma non è un blocco testa allora si prova a cercare il blocco successivo N di B. Se N viene trovato si aggiunge il suo ultimo successore 	    tra i blocchi testa, sennò si aggiunge B tra i blocchi testa.
+        - se P non è nella blockchain allora si fa richiesta di tutti i blocchi in posizione minore o uguale a pos, in cui pos è il valore minore tra la posizione di B 	  meno 1 e la posizione del blocco testa della catena più lunga.
+Anche il selfish mining è stato adattato alla semantica della nuova configurazione, in cui indice nella blockchain, posizione e ID hanno significati differenti.
+
+Per quanto riguarda la simulazione multilivello è stato aggiunto il parametro INTERMEDIATE_STEPS. Il numero di passi totali sarà dato dal prodotto del numero di passi di mining step (di default impostato a 5000) per INTERMEDIATE_STEPS. Durante l'esecuzione della simulazione se il valore del simclock modulo INTERMEDIATE_STEPS ha come risultato 0 allora si procede al tentativo di minare un blocco, viceversa è possibile solo inoltrare messaggi. Il valore più sensato di INTERMEDIATE_STEPS è il diametro massimo della rete, se usato un valore maggiore ci sarebbero degli step in cui è impossibile che si verifichi un evento.
+
+Un altro cambiamento ha riguardato gli hashrate dei nodi, che vengono ridimensionati proporzionatamente alla potenza di calcolo dell'attaccante, in modo che la somma dell'hashrate di tutti i nodi, attaccante compreso, sia sempre del 100%.
+
+Anche in LUNES-Bitcoin è stata implementata la possibilità di utilizzare Dandelion per la disseminazione delle transazioni.
+
+È stato creato anche un script, evaluate51.sh, che serve per valutare gli effetti dell'attacco del 51% con la nuova configurazione. In particolare eseguendolo si potranno ottenere le seguenti tuple:     
+                                 hashrate of the attacker  -- number of blocks in the main chain mined by the attacker --  length of the longest chain
+                                 hashrate of the attacker  -- number of blocks in the main chain mined by the attacker --  number of blocks mined by the attacker
+

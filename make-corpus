@@ -1,0 +1,75 @@
+#!/bin/bash
+
+###############################################################################################
+#	Advanced RTI System, ARTÌS			http://pads.cs.unibo.it
+#	Large Unstructured NEtwork Simulator (LUNES)
+#
+#	make-corpus
+#		version: 	0.1	14/12/10
+#
+#		original author:	Gabriele D'Angelo	<gda@cs.unibo.it>
+#
+#	description:
+#
+#	usage:
+#		./make-corpus <#NODES> <#EDGES> <MAX_DIAMETER>
+#		mandatory input parameters = #NODES
+#		<#NODES>		number of nodes in the networks to be generated
+#		<#EDGES>		number of edges for each node
+#		<MAX_DIAMETER>		max diameter of the generated graphs
+#
+#		example: ./make-corpus 100 2 8
+#			generate a corpus (NUMBERRUNS) graphs each one composed
+#			of 100 nodes, each node will have 2 edges, and each graph will
+#			have a diameter less or equal to 8
+#
+###########################################################################################
+
+#
+# Cleaning
+#
+rm -f status.txt
+
+#
+# Including some default configuration parameters
+#
+source scripts_configuration.sh
+
+RUN=$NUMBERRUNS
+TOT_RUNS=$RUN
+
+if [ "$#" != "3" ]; then
+  echo "		  Incorrect syntax...		 "
+  echo "USAGE: $0 [#NODES] [#EDGES] [MAX_DIAMETER]"
+  echo ""
+  exit
+fi
+
+EDGES=$(($2 * $1))
+MAX_DIAMETER=0
+AVERAGE_DIAMETER=0
+
+# Creating the corpus of graphs
+while [ $RUN -gt 0 ]; do
+  echo "Generating the graph: " $RUN "of" $TOT_RUNS
+  ./graphgen $1 $EDGES "$CORPUS_DIRECTORY/test-graph-$RUN.dot" $3
+  cat "$CORPUS_DIRECTORY/test-graph-$RUN.dot" | grep "\-\-" >"$CORPUS_DIRECTORY/test-graph-cleaned-$RUN.dot"
+  DIAMETER=$(cat status.txt | grep "Diameter of the graph" | cut -d":" -f2)
+
+  AVERAGE_DIAMETER=$(bc <<<"scale=2;$AVERAGE_DIAMETER+$DIAMETER/$TOT_RUNS")
+  if [ "$DIAMETER" -gt "$MAX_DIAMETER" ]; then
+    MAX_DIAMETER=$DIAMETER
+  fi
+
+  # The random generator used by igraph is very stupid, the seed is taken from the current time
+  sleep 1
+  RUN=$((RUN - 1))
+done
+
+echo "-- AVG diameter of generated graphs: $AVERAGE_DIAMETER"
+echo "-- MAX diameter of generated graphs: $MAX_DIAMETER"
+
+#
+# Cleaning
+#
+rm -f status.txt
