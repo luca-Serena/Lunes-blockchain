@@ -8,9 +8,9 @@ This _LUNES_ implementation is used to simulate the Bitcoin's protocol with opti
 
 - Mining
 - Transactions
-- Block propagation
-- Blockchain history
-- Verbose output
+- Block and transaction propagation
+- Blockchain concurrent behaviour
+- Forking: it is possible to use the old version with no chain forks allowed or the new version, in which the blocks actually have an ID, a reference to the previous block, a certain position in a chain and the program keeps track of a given number (Default 10) of chain forks, forgetting gradually the shortest chains
 
 ## Attacks
 
@@ -59,6 +59,9 @@ For example to run a simple simulation execute `./run-bitcoin -n 10000`. This wi
 //
 // request for specific blocks from peers: prints all msg to ask a peer for a specific block
 #define ASKBLOCKDEBUG
+
+// activation of the new configuration with forking allowed
+#define FORKING
 ```
 
 Logs for mined and received blocks are enabled by default.
@@ -93,6 +96,11 @@ The format of each data section is:
 - `ABS`: `clock - nodeid - blockid`
 - `ABR`: `clock - nodeid - blockid - tonode`
 
+
+### Evaluation 
+
+-- no forking mode --
+
 Executions outputs can be parsed using the Python script [`get_results.py`](./get_results.py). The script can plots all mined block within a time for all nodes or for a specified node ID, prints the blockchain stored for a node, the best miner and find if a block has received a transaction. There's no main routine and no argument parsing (for the moment). Output file size is at least `200MB` without enabling extra logging.
 
 `python get_results.py test.txt`
@@ -111,7 +119,20 @@ def parse_mined_block(arr):
 
 This script requires Python3 and [`matplotlib`](https://matplotlib.org/) installed.
 
-For more informations about data parsing and aggregation see `./results/README.md`.
+-- forking mode --
+
+To evaluate the outcome of 51% attack run the script evaluate51.sh
+The output will be a file named 51-res.txt whose records are in the format:
+
+attacker hashrate - number of blocks in the main chain mined by the attacker -  length of the longest chain
+
+Similarly to evaluate the outcome of the selfish mining attack run the script evaluateSelfish.sh
+The output will be a file named selfish-res.txt whose records are in the format:
+
+attacker hashrate - number of succeded attacks
+
+To evaluate DoS attack first #define TXDEBUG (sim.parameters.h), then run get_dataDOS.sh and plotDos.py in the results folder
+MathplotLib python library needed for plotting the result.
 
 ## Documentation ([Doxygen](https://github.com/doxygen/doxygen)
 
@@ -124,20 +145,20 @@ The command will generate a `/doc` folder (ignored by the repository indexing) w
 
 ## 51%
 
-This execution mode will run 100 times the main simulation using an increasing value of the hashrate of an attacker (using 10000 node the `attackerid` is 1337).
-
+This execution mode will run 100 times the main simulation using an increasing value of the hashrate of an attacker (by default the `attackerid` is 337).
+ 
 Output of this tests can be found in `./outputs` directory with the name: `test-51-H.txt` with **H** the value of the attacker's hashrate.
 
 #### Tests
 
-- 51-v1: 70% of miners (7000) in the network with low hashrate (no pools); the final plot is not what theoretical should be expected
-- 51-v2: 0.2% of miners (20) in the network with two pools with hashrate 17.7 and 13.8;
-- 51-v3: 0.15% of miners in the network with 3 pools and attacker is joining the network increasing the total hashrate (the sum of all hashrates percentage is > 100%);
-- dos: clock of 200 with 70% of miners; increasing number of node that perform the filtering of all messages of node 1337
-- dos-v2: same as `dos` but with `broadcast` dissemination and `TTL=20` (same results)
-- selfish-mining: 0.15% of miners with 3 bit pools
+51% attack has been tested both with 9 pools (whose overall hashrate is 82,7%) and without any pool. The results slightly differ, in the no pools configuration the number of succeded attacks is higher. Then the attack can be tested with a different
+
+selfish mining has also been tested both with 9 pools and with no pools. The results are simular but in the no pools configuration the number of succeded attacks is slightly higher
+
+dos attack has been tested with both probabilistic broadcast and dandelion as transaction dissemination protocol. It turned out that the used gossip algorithm is not a factor for the outcome of the test.
 
 ## Contacts
 
 Gabriele D'Angelo: <g.dangelo@unibo.it>
 Edoardo Rosa: <edoardo.rosa@studio.unibo.it>
+Luca Serena <luca.serena2@unibo.it>
