@@ -26,13 +26,15 @@ graphgen.c				LUNES, creation of graph topologies using
 					external libraries such as igraph or
 					internal functions
 
+INSTALLATION.TXT			Documentation
+
 lunes.c				LUNES-blockchain main component
 
 lunes.h				LUNES-blockchain main component
 
 lunes_constants.h			LUNES-blockchain main component
 
-make-corpus				LUNES, creation of graph "corpuses"
+make-corpus				LUNES-blockchain, creation of graph "corpuses"
 					based on "graphgen.c"
 
 Makefile				//
