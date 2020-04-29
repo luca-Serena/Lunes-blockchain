@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
 file="51-res.txt"
+if [ -f $file ] ; then
+    rm $file
+fi
+
 for i in outputs/*test*.txt ;do	
     #take all the last blocks, and find the one in greates position
     longest=$(cat $i | tail -n1000 | grep  "BR: " | cut -d "," -f6 | sort | tail -n1) #  $longest = position of the head of the main chain
@@ -30,6 +34,12 @@ for i in outputs/*test*.txt ;do
 		fi
 	done
 	echo $count
+    if [ "$rate" -lt 10 ] ; then                       
+        rate="0$rate"
+    fi
+    if [ "$rate" -lt 100 ] ; then
+        rate="0$rate"
+    fi
     echo "$rate $count $longest" >> $file              #hashrate of the attacker  -- number of blocks in the main chain mined by the attacker --  length of the longest chain
     #echo "$rate $count $attackerTotals" >> $file      #hashrate of the attacker  -- number of blocks in the main chain mined by the attacker --  number of blocks mined by the attacker
 done
