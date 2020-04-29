@@ -13,7 +13,7 @@ based on the Advanced RTI System, ARTÌS			http://pads.cs.unibo.it
 The scripts to be executed in order to use the program are the following:
 
 - make-corpus
-#	usage:
+#	to create nodes graph, usage:
 #		./make-corpus <#NODES> <#EDGES> <MAX_DIAMETER>
 #		mandatory input parameters:
 #		<#NODES>		number of nodes in the networks to be generated
@@ -27,7 +27,7 @@ The scripts to be executed in order to use the program are the following:
 
 - run-bitcoin
 
-#       usage:
+#       to run the test, usage:
 #       	./run-bitcoin --nodes|-n #SMH [--test|-t TESTNAME] [--debug|-d DEBUGCMD]"
 #		mandatory input parameters:
 #		-n		number of nodes in the networks
@@ -41,14 +41,16 @@ The scripts to be executed in order to use the program are the following:
 
 
 - evaluate51.sh
-# 		usage ./evaluate51.sh
+#	to evaluate 51% attack, usage:
+#		 ./evaluate51.sh
 # 		It parses the files outputs/test-51-@.txt where @ is the hashrate of the attacker producing the output file 51-res.txt, whose records are in the format:
 #		attacker hashrate -  number of blocks in the main chain mined by the attacker -  length of the longest chain
 #				
 
 
 - evaluateSelfish.sh
-# 		usage ./evaluateSelfish.sh
+# 	to evaluate selfish mining attack, usage: 
+#		./evaluateSelfish.sh
 # 		It parses the files outputs/test-Selfish-@.txt where @ is the hashrate of the attacker 
 #		producing the output file selfish-res.txt, whose records are in the format:
 #		attacker hashrate -  number of blocks in the main chain mined by the attacker -  length of the longest chain
