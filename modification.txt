@@ -1,30 +1,31 @@
-LUNES
+Modifications with respect to the previous version:
 
-Le modifiche effettuate su LUNES sono state:
-- l'implementazione di dandelion tra i vari protocolli di gossip
-- l'aggiunta dei file sim-metrics-dandelion-corpus e sim-metrics-dandelion per l'esecuzione del protocollo
+In sim-parameters.h a macro named #FORKING was added. If it's defined it allows to execute the new LUNES-Blockchain version with the presence of forks.
+Fields prevId and position were added to the struct block. They respectively represent the ID of the previous block and the position of the block within the chain. In the previous version the field id had the same meaning of both the position and the index of the list of blocks.
 
+In the static_data_t struct a field named heads was added. Heads is an array of pointer of blocks representing the head-blocks of the longest chains. The size of heads is n, and when the (n+1)th fork occurs then the head-block of the shortest chain is substituted by the new one. So you gradually lose track of the shortest chains, that  almost certainly won't be continued.
 
-LUNES-bitcoin
+In the FORKING version when a new block is created then it's added to the longest chain.
+When a new block B is received then it's inserted in the blockchain and:
+	- if B it's the first block of the chain then B is added to the head-blocks list
+	- if P, the previous block of B, is already in the blockchain and it's a head-block then B is inserted in place of P among the head-blocks.
+	- if P is in the blockchain but it's not a head-block then you try to find N, the following block of B. If N is found then you add among the head-blocks its last 	    descendant, otherwise B is added among the head-blocks.
+	- if P is not in the blockchain then you ask for all the blocks in minor or equal position than pos (pos is the minor between the position of B minus 1 and the 	  position of the head-block of the longest chain). For the moment B is an orphan block.
 
-Nel progetto è stata definita la macro #FORKING che se definita in sim-parameters.h consente di eseguire la versione di LUNES-Bitcoin in cui sono ammesse le biforcazioni.
-Nella struttura block sono stati aggiunti i campi prevId e position, che servono a indicare rispettivamente l'id del blocco precedente e la posizione del blocco nella catena di riferimento. Nella versione precedente il campo id aveva la stessa funzionalità sia di position sia dell'indice all'interno della lista di blocchi.
-Nella struttura static_data_t è stato invece aggiunto heads, un array di blocchi che rappresenta i blocchi testa del sistema. L'array avrà dimensione n, quando si crea la n+1 esima biforcazione il blocco testa della catena più corta sarà sostituito con quello della nuova biforcazione. Si perde così progressivamente traccia delle biforcazioni minori che non vengono poi continuate.
-Quando viene creato un blocco nella versione col FORKING questo viene aggiunto alla catena più lunga.
-Quando viene ricevuto un nuovo blocco B lo si inserisce nella blockchain e poi:
-	- se B è il primo blocco della catena si aggiunge B alla lista di blocchi testa
-	- se P, il blocco precedente di B, è nella blockchain ed è un blocco testa allora si inserisce B al posto di P tra i blocchi testa
-	- se P è nella blockchain ma non è un blocco testa allora si prova a cercare il blocco successivo N di B. Se N viene trovato si aggiunge il suo ultimo successore 	    tra i blocchi testa, sennò si aggiunge B tra i blocchi testa.
-        - se P non è nella blockchain allora si fa richiesta di tutti i blocchi in posizione minore o uguale a pos, in cui pos è il valore minore tra la posizione di B 	  meno 1 e la posizione del blocco testa della catena più lunga.
-Anche il selfish mining è stato adattato alla semantica della nuova configurazione, in cui indice nella blockchain, posizione e ID hanno significati differenti.
+Selfish mining as well was adapted to the semantic of the new configuraion, where the index of the blockchain, position, and ID have different meanings.
 
-Per quanto riguarda la simulazione multilivello è stato aggiunto il parametro INTERMEDIATE_STEPS. Il numero di passi totali sarà dato dal prodotto del numero di passi di mining step (di default impostato a 5000) per INTERMEDIATE_STEPS. Durante l'esecuzione della simulazione se il valore del simclock modulo INTERMEDIATE_STEPS ha come risultato 0 allora si procede al tentativo di minare un blocco, viceversa è possibile solo inoltrare messaggi. Il valore più sensato di INTERMEDIATE_STEPS è il diametro massimo della rete, se usato un valore maggiore ci sarebbero degli step in cui è impossibile che si verifichi un evento.
+For what concerns multilevel simulation a parameter named INTERMEDIATE_STEPS was added. The number of total steps will be the product of the number of mining steps (5000 by default) and INTERMEDIATE_STEPS. Throughout the execution of the simulation if (simclock % INTERMEDIATE_STEPS) = 0 then you proceed trying to mine a block, vice versa you can only forward messages. It's suggested to use the diameter of the network as INTERMEDIATE_STEPS, if a greater value is used then certainly some useless steps with no events performed will occur at each iteration.
 
-Un altro cambiamento ha riguardato gli hashrate dei nodi, che vengono ridimensionati proporzionatamente alla potenza di calcolo dell'attaccante, in modo che la somma dell'hashrate di tutti i nodi, attaccante compreso, sia sempre del 100%.
+Another change has regarded the nodes hashrate, that are scaled down proportionally to the computing power of the attacker, so that the sum of the hashrate of all the nodes, attacker included, is always 100%.
 
-Anche in LUNES-Bitcoin è stata implementata la possibilità di utilizzare Dandelion per la disseminazione delle transazioni.
+It was also implemented the opportunity to use Dandelion as gossip protocol for the transactions dissemination.
 
-È stato creato anche un script, evaluate51.sh, che serve per valutare gli effetti dell'attacco del 51% con la nuova configurazione. In particolare eseguendolo si potranno ottenere le seguenti tuple:     
-                                 hashrate of the attacker  -- number of blocks in the main chain mined by the attacker --  length of the longest chain
-                                 hashrate of the attacker  -- number of blocks in the main chain mined by the attacker --  number of blocks mined by the attacker
+Two scripts morover where created in order to evaluate 51% attack and selfish mining effect.
+The output of evaluate51.sh will be a file with tuples in the following format: 
+                hashrate of the attacker  -- number of blocks in the main chain mined by the attacker --  length of the longest chain
+or:
+                hashrate of the attacker  -- number of blocks in the main chain mined by the attacker --  number of blocks mined by the attacker
+
+The output of evaluateSelfish.sh will be a file with tuples in the following format:
+		hashrate of the attacker  -- number of succeded attacks
 
