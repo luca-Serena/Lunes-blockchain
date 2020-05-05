@@ -1,0 +1,31 @@
+Modifications with respect to the previous version:
+
+In sim-parameters.h a macro named #FORKING was added. If it's defined it allows to execute the new LUNES-Blockchain version with the presence of forks.
+Fields prevId and position were added to the struct block. They respectively represent the ID of the previous block and the position of the block within the chain. In the previous version the field id had the same meaning of both the position and the index of the list of blocks.
+
+In the static_data_t struct a field named heads was added. Heads is an array of pointer of blocks representing the head-blocks of the longest chains. The size of heads is n, and when the (n+1)th fork occurs then the head-block of the shortest chain is substituted by the new one. So you gradually lose track of the shortest chains, that  almost certainly won't be continued.
+
+In the FORKING version when a new block is created then it's added to the longest chain.
+When a new block B is received then it's inserted in the blockchain and:
+	- if B it's the first block of the chain then B is added to the head-blocks list
+	- if P, the previous block of B, is already in the blockchain and it's a head-block then B is inserted in place of P among the head-blocks.
+	- if P is in the blockchain but it's not a head-block then you try to find N, the following block of B. If N is found then you add among the head-blocks its last 	    descendant, otherwise B is added among the head-blocks.
+	- if P is not in the blockchain then you ask for all the blocks in minor or equal position than pos (pos is the minor between the position of B minus 1 and the 	  position of the head-block of the longest chain). For the moment B is an orphan block.
+
+Selfish mining as well was adapted to the semantic of the new configuraion, where the index of the blockchain, position, and ID have different meanings.
+
+For what concerns multilevel simulation a parameter named INTERMEDIATE_STEPS was added. The number of total steps will be the product of the number of mining steps (5000 by default) and INTERMEDIATE_STEPS. Throughout the execution of the simulation if (simclock % INTERMEDIATE_STEPS) = 0 then you proceed trying to mine a block, vice versa you can only forward messages. It's suggested to use the diameter of the network as INTERMEDIATE_STEPS, if a greater value is used then certainly some useless steps with no events performed will occur at each iteration.
+
+Another change has regarded the nodes hashrate, that are scaled down proportionally to the computing power of the attacker, so that the sum of the hashrate of all the nodes, attacker included, is always 100%.
+
+It was also implemented the opportunity to use Dandelion as gossip protocol for the transactions dissemination.
+
+Two scripts morover where created in order to evaluate 51% attack and selfish mining effect.
+The output of evaluate51.sh will be a file with tuples in the following format: 
+                hashrate of the attacker  -- number of blocks in the main chain mined by the attacker --  length of the longest chain
+or:
+                hashrate of the attacker  -- number of blocks in the main chain mined by the attacker --  number of blocks mined by the attacker
+
+The output of evaluateSelfish.sh will be a file with tuples in the following format:
+		hashrate of the attacker  -- number of succeded attacks
+

@@ -1,0 +1,154 @@
+###############################################################################
+		Large Unstructured NEtwork Simulator (LUNES)
+based on the Advanced RTI System, ARTÌS			http://pads.cs.unibo.it
+###############################################################################
+		
+©Copyright 2017					Gabriele D'Angelo
+	
+	Department of Computer Science and Engineering
+	University of Bologna
+
+----------------------------------------------------------------------------
+
+The scripts to be executed in order to use the program are the following:
+
+- make-corpus
+#	to create nodes graph, usage:
+#		./make-corpus <#NODES> <#EDGES> <MAX_DIAMETER>
+#		mandatory input parameters:
+#		<#NODES>		number of nodes in the networks to be generated
+#		<#EDGES>		number of edges for each node
+#		<MAX_DIAMETER>		max diameter of the generated graphs
+#
+#		example: ./make-corpus 100 2 8
+#			It generates a corpus (NUMBERRUNS) graphs each one composed
+#			of 100 nodes, each node will have 2 edges, and each graph will
+#			have a diameter less or equal to 8
+
+- run-bitcoin
+
+#       to run the test, usage:
+#       	./run-bitcoin --nodes|-n #SMH [--test|-t TESTNAME] [--debug|-d DEBUGCMD]"
+#		mandatory input parameters:
+#		-n		number of nodes in the networks
+#               optional parameters:
+#		-t		attack to be performed. The options are 51 for 51% attack, selfish for selfish mining attack, dos for denial of service attack
+#               -d              debugger to use, i.e. gdb
+#		
+#		example: ./run-bitcoin -n 500 -t 51
+#		It simulates the 51% attack on a network of 500 nodes
+#		If no attack is chosen you can anyway observe the blockchain behaviour, whose log will be available in test_normal.txt
+
+
+- evaluate51.sh
+#	to evaluate 51% attack, usage:
+#		 ./evaluate51.sh
+# 		It parses the files outputs/test-51-@.txt where @ is the hashrate of the attacker producing the output file 51-res.txt, whose records are in the format:
+#		attacker hashrate -  number of blocks in the main chain mined by the attacker -  length of the longest chain
+#				
+
+
+- evaluateSelfish.sh
+# 	to evaluate selfish mining attack, usage: 
+#		./evaluateSelfish.sh
+# 		It parses the files outputs/test-Selfish-@.txt where @ is the hashrate of the attacker 
+#		producing the output file selfish-res.txt, whose records are in the format:
+#		attacker hashrate -  number of blocks in the main chain mined by the attacker -  length of the longest chain
+#			
+
+WARNING: to work correctly LUNES-blockchain needs a lot of disk space for
+   	 log files and temporary files that are used for the performance
+	 evaluation tasks.
+
+----------------------------------------------------------------------------
+
+Note: for all the tuning aspects related to the ARTÌS/GAIA simulator
+please see its specific documentation:
+http://pads.cs.unibo.it/dokuwiki/doku.php?id=pads:gaia-apis
+
+1)	(GAIA specific)
+	MIGRATION variable, allowed settings:
+
+	MIGR_OFF		        0
+	MIGR_ON			1	
+	MIGR_E1			1	legacy algorithm
+	MIGR_E2			2	new algorithm, time-based
+	MIGR_E3			3	new algorithm, event-based
+
+2)	(LUNES-bitcoin specific)
+	DISSEMINATION modes for new and routed messages:
+
+	BROADCAST 			0
+	FIXED PROBABILITY		1
+	DANDELION			8
+
+3)	(GAIA specific)
+	MFACTOR, migration factor (default value is 3)
+
+4)	(GAIA specific)
+	LOAD, load balancing control
+
+	OFF			0	
+	ON			1
+
+5)	(LUNES specific)
+	MAX_TTL, maximum time-to-live for messages in the network
+
+6)	(LUNES-blockchain specific)
+	Based on the dissemination mode:
+	- 	BROADCAST: 			BROADCAST_PROB_THRESHOLD
+		probability threshold of the probabilistic broadcast dissemination
+
+	-	GOSSIP_FIXED_PROB: 		FIXED_PROB_THRESHOLD
+		probability threshold of the fixed probability dissemination
+
+	-	DANDELION:	 		DANDELION_FLUFF_PHASE
+		number of steps of the fluff phase		
+
+
+7)	(LUNES-blockchain specific)
+	MINERS_COUNT, percentage of miners among the users
+
+
+8)	(LUNES specific)	
+	CACHE SIZE, number of slots used to cache messages
+		warning: the max size is defined using the hard-coded constant
+			MAX_CACHE_SIZE defined in "lunes_constants.h"
+
+9)	(LUNES-blockchain specific)
+	FREERIDER, probability that a node is a free-rider
+		warning: must be in the range [0,1]
+
+10)	(LUNES-blockchain specific)
+	NUMBER_HEADS, number of head-blocks memorized and therefore number of chain forks you keep track
+
+11)	(LUNES-blockchain specific)
+	END_CLOCK, number of total steps in the simulation
+
+12)	(LUNES-blockchain specific)
+	INTERMEDIATE_STEPS, it sets how often a mining step occurs
+        	warning: 1 to set single-layer system
+
+13)	(LUNES-blockchain specific)
+	GLOBAL_HASHRATE, that takes the real global mining hashrate
+
+14)	(LUNES-blockchain specific)
+	DIFFICULTY, it sets the difficulty for mining a node
+	
+	
+
+----------------------------------------------------------------------------
+USAGE EXAMPLE
+----------------------------------------------------------------------------
+In order to test the attacks with various configurations it makes sense to modify MINERS_COUNT, the percentage of active miners in the system. Furthermore in bitcoin.c
+9 pools of users with a total hashrate of 82.7% are set, according to Bitcoin unofficial data about clusters. Changing these values or removing the clusters might be userful to test the influence of big clusters in the blockchain behaviour.
+
+It's also suggested to vary the graph representing the network, choosing among the proposed topology (k-regular, random, small world, scale free,
+the non-used option commented in graphgen.c) and varying the number of total nodes and connections.
+
+For testing DoS attack it can be useful to change the gossip algorithm used for transactions and its respective parameter
+(while blocks are propagated in pure broadcast). 
+
+Morover you can change the victim or the attacker node (utils.c) in order to test the influence of the graph position of the victim or the attacker.
+
+----------------------------------------------------------------------------
