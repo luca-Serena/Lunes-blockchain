@@ -14,7 +14,7 @@ for i in outputs/*test-Selfish-*.txt ;do
         rate="0$rate"
     fi
     succed=$(cat $i | grep -c "possible")
-	succed=$(cat $i | tail -8 | head -1 | cut -d "," -f6)
+	#succed=$(cat $i | tail -8 | head -1 | cut -d "," -f6)           
 	if [ -z "$succed" ] ; then
 		succed=$(cat $i | tail -8 | head -1 | cut -d "," -f4)
     fi
