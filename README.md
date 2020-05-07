@@ -22,30 +22,30 @@ This _LUNES_ implementation is used to simulate the Bitcoin's protocol with opti
 
 To reduce RAM usage all messages are pointers. This setup cannot be used with multiple _LPs_. The program must be run without parallelism.
 
-`run-bitcoin` script is configured to execute the program and the simulator manager with 1 _LP_.
+`run-blockchain` script is configured to execute the program and the simulator manager with 1 _LP_.
 
 If your device has more than 16GB (at least, 36GB should be enough) you can change all function calls to pass by value all messages.
 
 ## Compilation
 
-Run `make` inside this folder to compile the binary: `bitcoin`.
+Run `make` inside this folder to compile the binary: `blockchain`.
 
 ## Usage
 
 First of all to create a corpus for the simulator run `./make-corpus`.
 
-To start the run use `run-bitcoin` Bash script: this will take care of sourcing and setting all global variables.
+To start the run use `run-blockchain` Bash script: this will take care of sourcing and setting all global variables.
 
-This script is used to start the SImulator MAnager (_SIMA_) and the binary `bitcoin` with all necessary arguments.
+This script is used to start the SImulator MAnager (_SIMA_) and the binary `blockchain` with all necessary arguments.
 
 ```
-USAGE: ./run-bitcoin --nodes|-n #SMH [--test|-t TESTNAME] [--debug|-d DEBUGCMD]
+USAGE: ./run-blockchain --nodes|-n #SMH [--test|-t TESTNAME] [--debug|-d DEBUGCMD]
 	#SMH	   total number of nodes to simulate
 	[TESTNAME] name of the test to execute: 51, selfish or dos (optional)
 	[DEBUGCMD] used for injecting *trace commands (optional)
 ```
 
-For example to run a simple simulation execute `./run-bitcoin -n 10000`. This will prints all logs in `stdout`. Logs are enabled or disable using `#define` statements in [`sim-parameters.h`](./sim-parameters.h).
+For example to run a simple simulation execute `./run-blockchain -n 10000`. This will prints all logs in `stdout`. Logs are enabled or disable using `#define` statements in [`sim-parameters.h`](./sim-parameters.h).
 
 ```c
 // stale blocks debug: prints all msgs with rejected blocks

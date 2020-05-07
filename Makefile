@@ -6,8 +6,8 @@ include         $(ROOT)/config.mak
 
 INCLDIR		= $(ROOT)/INCLUDE
 LIBDIR		= $(ROOT)/LIB
-BINS		= sima bitcoin graphgen
-HEADERS		= sim-parameters.h utils.h user_event_handlers.h msg_definition.h entity_definition.h lunes.h lunes_constants.h
+BINS		= sima blockchain graphgen
+HEADERS		= sim-parameters.h utils.h user_event_handlers.h msg_definition.h entity_definition.h lunes.h lunes_constants.h 
 #------------------------------------------------------------------------------
 
 CFLAGS		+= -g $(OPTFLAGS) -I. -I$(INCLDIR) `pkg-config --cflags glib-2.0`
@@ -18,8 +18,8 @@ LDFLAGS		+= $(LIBS)
 
 all:	$(BINS) 
 
-bitcoin:	bitcoin.o utils.o user_event_handlers.o lunes.o $(HEADERS)
-	$(CC) -g -o $@ $(CFLAGS) bitcoin.o utils.o user_event_handlers.o lunes.o $(LDFLAGS)
+blockchain:	blockchain.o utils.o user_event_handlers.o lunes.o $(HEADERS)
+	$(CC) -g -o $@ $(CFLAGS) blockchain.o utils.o user_event_handlers.o lunes.o $(LDFLAGS)
 
 graphgen:	graphgen.c
 	$(CC) -g -o $@ $(CFLAGS) graphgen.c -ligraph -I/usr/include/igraph-0.7.1/include/

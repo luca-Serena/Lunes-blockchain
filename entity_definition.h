@@ -64,6 +64,9 @@ typedef struct static_data_t {
     float     time_of_next_trans;             // Timestep in which the next new transaction will be created and sent
     float     time_of_next_check;             // Timestep in which the next check for new block will be created and sent
     Block     blockchain[2500];               // Array of blocks
+    #ifdef DOS
+    short     received;
+    #endif
 } static_data_t;
 
 /*! \brief SE state definition */

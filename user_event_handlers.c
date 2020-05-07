@@ -39,6 +39,7 @@
 #include "lunes_constants.h"
 #include "user_event_handlers.h"
 
+
 /* ************************************************************************ */
 /*          E X T E R N A L     V A R I A B L E S                           */
 /* ************************************************************************ */
@@ -74,7 +75,7 @@ extern double       env_function_coefficient;       /* Coefficient of probabilit
 extern float  env_global_hashrate;                  /* Total Hashrate of Bitcoin Network in H/min */
 extern double env_difficulty;                       /* Actual Bitcoin network difficulty */
 extern int    env_miners_count;                     /* Number of miners for this current run */
-extern int    number_dos_nodes;
+extern int    number_dos_nodes;                     /* dos attackers that don't forward victim messages  */
 
 
 /* ************************************************************************ */
@@ -419,7 +420,11 @@ void user_trans_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
     #endif
 
     // Calling the appropriate LUNES user level handler
-    lunes_user_trans_event_handler(node, forwarder, msg);
+    if (number_dos_nodes > 0){
+        lunes_dos_user_event_handler(node, forwarder, msg);
+    } else {
+        lunes_user_trans_event_handler(node, forwarder, msg);
+    }
 }
 
 /****************************************************************************
@@ -552,8 +557,12 @@ void user_control_handler() {
         for (h = 0; h < stable->size; h++) {
             for (node = stable->bucket[h]; node; node = node->next) {
                 // Calling the appropriate LUNES user level handler
-                lunes_user_control_handler(node);
-            }
+                if (number_dos_nodes > 0) {
+                    lunes_dos_user_control_handler(node);
+                } else {
+                    lunes_user_control_handler(node);
+                }
+            } 
         }
     }
 }
@@ -573,8 +582,11 @@ void user_model_events_handler(int to, int from, Msg *msg, hash_node_t *node) {
     switch (msg->type) {
     // A transaction message
     case 'T':
-        if (number_dos_nodes > 0 && node->data->attackerid == node->data->key && msg->trans.trans_static.creator == victim) {
+       /* if (number_dos_nodes > 0 && node->data->attackerid == node->data->key && msg->trans.trans_static.creator == victim) {
             break;
+        }*/
+        if (number_dos_nodes > 0 && node->data->attackerid == -1){
+
         }
         user_trans_event_handler(node, from, msg);
         break;
@@ -718,7 +730,7 @@ void user_environment_handler() {
     }
 
     env_difficulty = atof(check_and_getenv("DIFFICULTY"));
-    fprintf(stdout, "LUNES___[%10d]: BITCOIN DIFFICULTY: %f\n", local_pid, env_difficulty);
+    fprintf(stdout, "LUNES___[%10d]: BLOCKCHAIN DIFFICULTY: %f\n", local_pid, env_difficulty);
 
     // Convert the hashrate from H/s to H/min;
     env_global_hashrate = atof(check_and_getenv("GLOBAL_HASHRATE")) * 60;

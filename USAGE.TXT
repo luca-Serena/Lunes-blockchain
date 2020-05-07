@@ -25,17 +25,17 @@ The scripts to be executed in order to use the program are the following:
 #			of 100 nodes, each node will have 2 edges, and each graph will
 #			have a diameter less or equal to 8
 
-- run-bitcoin
+- run-blockchain
 
 #       to run the test, usage:
-#       	./run-bitcoin --nodes|-n #SMH [--test|-t TESTNAME] [--debug|-d DEBUGCMD]"
+#       	./run-blockchain --nodes|-n #SMH [--test|-t TESTNAME] [--debug|-d DEBUGCMD]"
 #		mandatory input parameters:
 #		-n		number of nodes in the networks
 #               optional parameters:
 #		-t		attack to be performed. The options are 51 for 51% attack, selfish for selfish mining attack, dos for denial of service attack
 #               -d              debugger to use, i.e. gdb
 #		
-#		example: ./run-bitcoin -n 500 -t 51
+#		example: ./run-blockchain -n 500 -t 51
 #		It simulates the 51% attack on a network of 500 nodes
 #		If no attack is chosen you can anyway observe the blockchain behaviour, whose log will be available in test_normal.txt
 
@@ -75,7 +75,7 @@ http://pads.cs.unibo.it/dokuwiki/doku.php?id=pads:gaia-apis
 	MIGR_E2			2	new algorithm, time-based
 	MIGR_E3			3	new algorithm, event-based
 
-2)	(LUNES-bitcoin specific)
+2)	(LUNES-blockchain specific)
 	DISSEMINATION modes for new and routed messages:
 
 	BROADCAST 			0
@@ -140,7 +140,7 @@ http://pads.cs.unibo.it/dokuwiki/doku.php?id=pads:gaia-apis
 ----------------------------------------------------------------------------
 USAGE EXAMPLE
 ----------------------------------------------------------------------------
-In order to test the attacks with various configurations it makes sense to modify MINERS_COUNT, the percentage of active miners in the system. Furthermore in bitcoin.c
+In order to test the attacks with various configurations it makes sense to modify MINERS_COUNT, the percentage of active miners in the system. Furthermore in blockchain.c
 9 pools of users with a total hashrate of 82.7% are set, according to Bitcoin unofficial data about clusters. Changing these values or removing the clusters might be userful to test the influence of big clusters in the blockchain behaviour.
 
 It's also suggested to vary the graph representing the network, choosing among the proposed topology (k-regular, random, small world, scale free,
