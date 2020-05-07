@@ -14,7 +14,7 @@ artis_mpi.ini				ARTÌS component
 
 entity_definition.h			LUNES-blockchain main component
 
-bitcoin.c				LUNES-blockchain main component
+blockchain.c				LUNES-blockchain main component
 
 channels.txt				configuration file
 
@@ -51,7 +51,7 @@ Randgen.c				ARTÌS component for generation of random numbers
 
 README.TXT				Documentation
 
-run-bitcoin				LUNES-blockchain, script to launch the program, set the number of nodes and the potential attack
+run-blockchain				LUNES-blockchain, script to launch the program, set the number of nodes and the potential attack
 
 scripts_configuration.sh		LUNES-blockchain, definition of parameters
 
