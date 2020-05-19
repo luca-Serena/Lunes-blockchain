@@ -5,12 +5,12 @@ trap ctrl_c INT
 ctrl_c() {
   # Clean the system
   kill -9 "$(pgrep 'sima')" >/dev/null 2>&1
-  kill -9 "$(pgrep 'bitcoin')" >/dev/null 2>&1
+  kill -9 "$(pgrep 'blockchain')" >/dev/null 2>&1
   sync
   exit -2
 }
 kill -9 "$(pgrep 'sima')" >/dev/null 2>&1
-kill -9 "$(pgrep 'bitcoin')" >/dev/null 2>&1
+kill -9 "$(pgrep 'blockchain')" >/dev/null 2>&1
 
 # Init vars
 HOST="localhost"
@@ -47,7 +47,7 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 if [[ -n $1 || -z ${TOT_SMH} ]]; then
   echo "Illegal number of parameters"
-  echo "USAGE: ./run-bitcoin --nodes|-n #SMH [--test|-t TESTNAME] [--debug|-d DEBUGCMD]"
+  echo "USAGE: ./run-blockchain --nodes|-n #SMH [--test|-t TESTNAME] [--debug|-d DEBUGCMD]"
   echo -e "\\t#SMH\\ttotal number of nodes to simulate"
   echo -e "\\t[TESTNAME] name of the test to execute: 51, selfish (optional)"
   echo -e "\\t[DEBUGCMD] used for injecting *trace commands (optional)"
@@ -68,15 +68,15 @@ export LOAD=0
 export MAX_TTL=14 # DEFAULT=16
 export FREERIDER="0"
 export DISSEMINATION=0 # 0 = BROADCAST, 7 = DDF2
-export BROADCAST_PROB_THRESHOLD=45
-export FIXED_PROB_THRESHOLD=45  
-export DANDELION_STEPS_FLUFF_PHASE=11
+export BROADCAST_PROB_THRESHOLD=70
+export FIXED_PROB_THRESHOLD=70
+export DANDELION_STEPS_FLUFF_PHASE=12
 export PROBABILITY_FUNCTION=2DIFFICULTY
 export FUNC_COEFF_HIGHER=4
 export FUNC_COEFF_LOWER=74
 export FUNCTION_COEFFICIENT="$FUNC_COEFF_HIGHER.$FUNC_COEFF_LOWER"
 export NUMBER_HEADS=10
-export INTERMEDIATE_STEPS=8 #after (INTERMEDIATE_STEPS - 1) steps of the simulation just for receiving messages you try to mine a block, usually slightly larger than diameter
+export INTERMEDIATE_STEPS=2 #after (INTERMEDIATE_STEPS - 1) steps of the simulation just for receiving messages you try to mine a block, usually slightly larger than diameter
 export END_CLOCK=$((5000 * $INTERMEDIATE_STEPS)) #5000 steps in which it's possible to mine a block, the others are just to propagate messages
 export MINERS_COUNT=40 # Percentage of miners
 export DIFFICULTY=$(http --json https://api.blockchain.info/stats | jq -r '.difficulty')
@@ -87,7 +87,7 @@ export GLOBAL_HASHRATE=43983561622000000000 # in H/s
 python -c "print($GLOBAL_HASHRATE * 600 / (pow(2,32) * $DIFFICULTY))"
 
 ###########################################################################################
-echo "BITCOIN SIMULATION standard batch..."
+echo "BLOCKCHAIN SIMULATION standard batch..."
 echo "NETWORK DIFFICULTY: ${DIFFICULTY}"
 echo "NETOWRK HASHRATE: ${GLOBAL_HASHRATE}"
 
@@ -108,7 +108,7 @@ find_best_params() {
         export MAX_TTL="${ttl}"
         ./sima "$NLP" /dev/null 2>&1 &
         sleep 1
-        $DEBUG ./bitcoin "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --attacker "${i}" >"./outputs/$fcoeff_higher.$fcoeff_lower-${ttl}.txt"
+        $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --attacker "${i}" >"./outputs/$fcoeff_higher.$fcoeff_lower-${ttl}.txt"
         sleep 5
       done
     done
@@ -129,7 +129,7 @@ if [[ -z "$TEST" ]]; then
     echo "Starting SIMA (waiting for $NLP LPs)..."
     ./sima "$NLP" &
   fi
-  $DEBUG ./bitcoin "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ > "test_normal.txt"
+  $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ > "test_normal.txt"
   echo "End time: $(date)"
   exit -1
 fi
@@ -145,7 +145,7 @@ if [[ "${TEST}" == "51" ]]; then
       ./sima "$NLP" &
     fi
     echo -e "Testing 51% \\e[33m\\e[5m${i}/100\\e[0m"
-    $DEBUG ./bitcoin "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --attacker ${i} >"./outputs/test-51-${i}.txt"
+    $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --attacker ${i} >"./outputs/test-51-${i}.txt"
     echo "End time: $(date)"
   done
   rm ./*.finished
@@ -164,7 +164,7 @@ if [[ "${TEST}" == "selfish" ]]; then
       ./sima "$NLP" &
     fi
     echo -e "Testing Selfish Mining \\e[33m\\e[5m${i}/100\\e[0m"
-    $DEBUG ./bitcoin "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --selfish ${i} > "./outputs/test-Selfish-${i}.txt"
+    $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --selfish ${i} > "./outputs/test-Selfish-${i}.txt"
     echo "End time: $(date)"
   done
   rm ./*.finished
@@ -183,7 +183,7 @@ if [[ "${TEST}" == "dos" ]]; then
 	     ./sima "$NLP" &
 	   fi
 	   echo -e "Testing DoS \\e[33m\\e[5m${i}/100\\e[0m"
-	   $DEBUG ./bitcoin "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --dos "${i}" > "./outputs/test-dos-${i}.txt"
+	   $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --dos "${i}" > "./outputs/test-dos-${i}.txt"
 	   echo "End time: $(date)"
 	     done
 	else
@@ -209,7 +209,7 @@ if [[ "${TEST}" == "dos" ]]; then
       ./sima "$NLP" &
     fi
     echo -e "Creating \\e[33m\\e[5mBaseline\\e[0m"
-    $DEBUG ./bitcoin "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ >"./outputs/test-DOS-0.txt"
+    $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ >"./outputs/test-DOS-0.txt"
 
     # Split the test into 3 batch: too much disk space is required
     MAXRUN=100
@@ -222,7 +222,7 @@ if [[ "${TEST}" == "dos" ]]; then
         ./sima "$NLP" &
       fi
       echo -e "Testing DoS \\e[33m\\e[5m${i}/${MAXRUN}/1\\e[0m"
-      $DEBUG ./bitcoin "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --dos "${i}" >"./outputs/test-DOS-${i}.txt"
+      $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --dos "${i}" >"./outputs/test-DOS-${i}.txt"
       echo "End time: $(date)"
     done
 
@@ -236,7 +236,7 @@ if [[ "${TEST}" == "dos" ]]; then
         ./sima "$NLP" &
       fi
       echo -e "Testing DoS \\e[33m\\e[5m${i}/${MAXRUN}/2\\e[0m"
-      $DEBUG ./bitcoin "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --dos "${i}" >"./outputs/test-DOS-${i}.txt"
+      $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --dos "${i}" >"./outputs/test-DOS-${i}.txt"
       echo "End time: $(date)"
     done
 
@@ -249,7 +249,7 @@ if [[ "${TEST}" == "dos" ]]; then
         ./sima "$NLP" &
       fi
       echo -e "Testing DoS \\e[33m\\e[5m${i}/${MAXRUN}/3\\e[0m"
-      $DEBUG ./bitcoin "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --dos "${i}" >"./outputs/test-DOS-${i}.txt"
+      $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --dos "${i}" >"./outputs/test-DOS-${i}.txt"
       echo "End time: $(date)"
     done
 
@@ -261,7 +261,7 @@ if [[ "${TEST}" == "dos" ]]; then
       ./sima "$NLP" &
     fi
     echo -e "Testing DoS \\e[33m\\e[5mfor fun!\\e[0m"
-    $DEBUG ./bitcoin "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --dos 9999 >"./outputs/test-DOS-9999.txt"
+    $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --dos 9999 >"./outputs/test-DOS-9999.txt"
     echo "End time: $(date)"
 
   else

@@ -66,9 +66,12 @@ extern unsigned int env_probability_function;       /* Probability function for 
 extern double       env_function_coefficient;       /* Coefficient of the probability function */
 #endif
 extern float  env_global_hashrate;                  /* Total Hashrate of Bitcoin Network in H/min */
-extern double env_difficulty;                       /* Actual Bitcoin network difficulty */
+extern double env_difficulty;                       /* Actual blockchain network difficulty */
 extern int *  selfish;                              /* Used for the selfish mining */
 extern int number_of_heads;                         /* Number of forks is kept track in the system. The head is the last block of a chain */
+extern int number_dos_nodes;                        /* dos attackers that don't forward victim messages  */
+extern int victim;
+extern unsigned short env_max_ttl;                  /* TTL of new messages */
 
 
 /* ************************************************************************ */
@@ -400,7 +403,7 @@ void lunes_real_forward(hash_node_t *node, Msg *msg, unsigned short ttl, float t
         case DANDELION:
             g_hash_table_iter_init (&iter, node->data->state);
             txid = msg->trans.trans_static.transid;
-            if (ttl >= env_dandelion_fluff_steps){                   //stem phase
+            if (ttl >= env_dandelion_fluff_steps ){                   //stem phase
                 int neighbors = node->data->num_neighbors;
                 int selectedIndex = rand() % neighbors;             //just sending the message to the neighbor of that index
                 int iterIndex = 0;
@@ -410,7 +413,6 @@ void lunes_real_forward(hash_node_t *node, Msg *msg, unsigned short ttl, float t
                     receiver = hash_lookup(table, *(unsigned int *)destination);        // The neighbor
 
                     if (iterIndex == selectedIndex){                 //message just sent to the neighbor of index selectedIndex, generated randomly
-                       // fprintf(stdout, "minghie\n" );
                         execute_trans (simclock + FLIGHT_TIME, sender, receiver, ttl, txid, from, to, timestamp, creator);
                         break;
                     }
@@ -835,7 +837,7 @@ void lunes_user_control_handler(hash_node_t *node) {
 	                }
 	            }else {
 	                // Broadcasting the mined ("old") block to all neighbors
-	                lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[ltblock]);
+	                //  lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[ltblock]);
 	                // clock - nodeid - blockminedid - hashrate
 	                #ifdef FORKING
 	                fprintf(stdout, "BS: %.0f,%d,_%d,%d,%f,%d\n", simclock, node->data->key, newId, b->prevId, node->data->hashrate, b-> position);
@@ -1275,3 +1277,60 @@ void lunes_user_askblock_event_handler(hash_node_t *node, int forwarder, Msg *ms
         #endif
     }
 }
+
+
+#ifdef DOS
+
+void lunes_dos_user_control_handler(hash_node_t *node) {
+    if (simclock == 5){ //to do just once
+        GHashTableIter iter;
+        gpointer       key, destination;
+        g_hash_table_iter_init(&iter, node->data->state);
+        int count = 0;
+            // All neighbors
+        while (g_hash_table_iter_next(&iter, &key, &destination)) {
+            count = count +1;
+        }
+        node->data->num_neighbors = count;
+    }
+
+    if ((int)simclock % env_max_ttl == 0 && simclock + env_max_ttl < 5000){  //da parametrizzare
+        if (node->data->key == victim){
+            fprintf(stdout, "victim: %d\n", victim);
+            TransMsg     msg;
+            // Defining the message type
+            msg.trans_static.type = 'T';
+            msg.trans_static.timestamp = simclock;
+            msg.trans_static.ttl       = env_max_ttl;
+            msg.trans_static.transid   = RND_Interval(S, 0, MAXINT - 1);
+            msg.trans_static.creator   = node->data->key;
+            lunes_forward_to_neighbors(node,
+                                           &msg,
+                                           --(msg.trans_static.ttl),
+                                           msg.trans_static.timestamp,
+                                           msg.trans_static.creator,
+                                           node->data->key);
+        }
+        else {
+            node->data->s_state.received = 0;
+        }
+    }
+}
+
+void lunes_dos_user_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
+    // Time-To-Live check
+    if (msg->trans.trans_static.ttl > 0) {
+        if (node->data->key != msg->trans.trans_static.creator && node->data->s_state.received == 0 && node->data->key >= number_dos_nodes){
+            node->data->s_state.received = 1;
+
+                fprintf(stdout, "TR: %.0f,%d\n", simclock, node->data->key);
+                lunes_forward_to_neighbors(node,
+                                           msg,
+                                           --(msg->trans.trans_static.ttl),
+                                           msg->trans.trans_static.timestamp,
+                                           msg->trans.trans_static.creator,
+                                           node->data->key);
+        }
+    }
+}
+#endif

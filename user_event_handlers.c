@@ -76,6 +76,7 @@ extern float  env_global_hashrate;                  /* Total Hashrate of Bitcoin
 extern double env_difficulty;                       /* Actual Bitcoin network difficulty */
 extern int    env_miners_count;                     /* Number of miners for this current run */
 extern int    number_dos_nodes;                     /* dos attackers that don't forward victim messages  */
+extern int    victim;
 
 
 /* ************************************************************************ */
@@ -549,6 +550,11 @@ void user_control_handler() {
         lunes_load_graph_topology();
     }
 
+    if (number_dos_nodes > 0 && (int)simclock % env_max_ttl == 0 ){
+        victim++;
+        
+    }
+
     // Only if in the aggregation phase is finished &&
     // if it is possible to send messages up to the last simulated timestep then the statistics will be
     // affected by some messages that have been sent but with no time to be received
@@ -573,7 +579,6 @@ void user_control_handler() {
  *         handler will complete its processing
  */
 void user_model_events_handler(int to, int from, Msg *msg, hash_node_t *node) {
-    int victim = 337;
 
     // A model event has been received, now calling appropriate user level handler
 
@@ -585,8 +590,8 @@ void user_model_events_handler(int to, int from, Msg *msg, hash_node_t *node) {
        /* if (number_dos_nodes > 0 && node->data->attackerid == node->data->key && msg->trans.trans_static.creator == victim) {
             break;
         }*/
-        if (number_dos_nodes > 0 && node->data->attackerid == -1){
-
+        if ( number_dos_nodes > node->data->key ){
+            break;
         }
         user_trans_event_handler(node, from, msg);
         break;

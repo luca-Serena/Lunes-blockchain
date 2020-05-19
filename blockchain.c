@@ -80,6 +80,7 @@ double         env_function_coefficient;      // Coefficient of the probability 
 float  env_global_hashrate;                   /* Total Hashrate of Bitcoin Network in H/min */
 double env_difficulty;                        /* Actual Bitcoin network difficulty */
 int    env_miners_count;                      /* Number of miners for this current run */
+int victim = 0;
 
 /* ************************************************************************ */
 /*                      Hash Tables		                                    */
@@ -519,8 +520,11 @@ int main(int argc, char *argv[]) {
         if (strcmp(argv[4], "--dos") == 0) {
             number_dos_nodes = atoi(argv[5]);
             float coefficient = (float) NSIMULATE / 100;
-            number_dos_nodes = coefficient *number_dos_nodes;
+            number_dos_nodes = coefficient * number_dos_nodes;
             fprintf(stdout, "%d %d\n", number_dos_nodes, NSIMULATE);
+            if (number_dos_nodes >= victim){
+                number_dos_nodes ++;
+            }
         }
         if (strcmp(argv[4], "--selfish") == 0) {
             atk_hashrate = atoi(argv[5]);
