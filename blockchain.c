@@ -522,9 +522,9 @@ int main(int argc, char *argv[]) {
             float coefficient = (float) NSIMULATE / 100;
             number_dos_nodes = coefficient * number_dos_nodes;
             fprintf(stdout, "%d %d\n", number_dos_nodes, NSIMULATE);
-            if (number_dos_nodes >= victim){
+           /* if (number_dos_nodes >= victim){   //managed differently in the new version of dos
                 number_dos_nodes ++;
-            }
+            }*/
         }
         if (strcmp(argv[4], "--selfish") == 0) {
             atk_hashrate = atoi(argv[5]);

@@ -704,10 +704,10 @@ void user_environment_handler() {
         
         //  Runtime configuration:  setting number of stem and fluff phase for dandelion
     case DANDELION:
+    case DANDELIONPLUS:
         env_dandelion_fluff_steps = atof(check_and_getenv("DANDELION_STEPS_FLUFF_PHASE"));
         fprintf(stdout, "LUNES____[%10d]: DANDELION_STEPS_FLUFF_PHASE -> %f\n", local_pid, env_dandelion_fluff_steps);
         if ( ( env_dandelion_fluff_steps < 0 ) || ( env_dandelion_fluff_steps > env_max_ttl ) ) {
-
             fprintf(stdout, "LUNES____[%10d]:  DANDELION_STEPS_FLUFF_PHASE is out of the boundaries!!!\n", local_pid);
         }   
 

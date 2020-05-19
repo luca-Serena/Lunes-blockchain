@@ -72,8 +72,8 @@ extern int number_of_heads;                         /* Number of forks is kept t
 extern int number_dos_nodes;                        /* dos attackers that don't forward victim messages  */
 extern int victim;
 extern unsigned short env_max_ttl;                  /* TTL of new messages */
-
-
+int dand_plus_waiting = 5;
+int actual_dos_nodes;
 /* ************************************************************************ */
 /*          S U P P O R T      F U N C T I O N S		                    */
 /* ************************************************************************ */
@@ -401,6 +401,7 @@ void lunes_real_forward(hash_node_t *node, Msg *msg, unsigned short ttl, float t
             break;
 
         case DANDELION:
+        case DANDELIONPLUS:
             g_hash_table_iter_init (&iter, node->data->state);
             txid = msg->trans.trans_static.transid;
             if (ttl >= env_dandelion_fluff_steps ){                   //stem phase
@@ -538,6 +539,7 @@ void lunes_forward_to_neighbors(hash_node_t *node, Msg *msg, unsigned short ttl,
 
     case GOSSIP_FIXED_PROB:      
     case DANDELION:
+    case DANDELIONPLUS:
         lunes_real_forward(node, msg, ttl, timestamp, creator, forwarder);
         break;
 
@@ -1282,6 +1284,7 @@ void lunes_user_askblock_event_handler(hash_node_t *node, int forwarder, Msg *ms
 #ifdef DOS
 
 void lunes_dos_user_control_handler(hash_node_t *node) {
+    //initialization
     if (simclock == 5){ //to do just once
         GHashTableIter iter;
         gpointer       key, destination;
@@ -1294,42 +1297,81 @@ void lunes_dos_user_control_handler(hash_node_t *node) {
         node->data->num_neighbors = count;
     }
 
+    //transaction creation by the victim
     if ((int)simclock % env_max_ttl == 0 && simclock + env_max_ttl < 5000){  //da parametrizzare
         if (node->data->key == victim){
             fprintf(stdout, "victim: %d\n", victim);
+            if (victim < number_dos_nodes){                  //manage the case the victim has id minor than number_dos_nodes
+                actual_dos_nodes=number_dos_nodes +1;
+            } else {
+                actual_dos_nodes = number_dos_nodes;
+            }
+
+            if (env_dissemination_mode == BROADCAST || env_dissemination_mode == GOSSIP_FIXED_PROB ){
+                lunes_send_trans_to_neighbors(node, 0,0,0);
+            } else {
+                node->data->s_state.received = simclock;        
+                TransMsg     msg;
+                // Defining the message type
+                msg.trans_static.type = 'T';
+                msg.trans_static.timestamp = simclock;
+                msg.trans_static.ttl       = env_max_ttl;
+              //  msg.trans_static.transid   = RND_Interval(S, 0, MAXINT - 1);
+                msg.trans_static.creator   = node->data->key;
+                lunes_forward_to_neighbors(node,
+                                               &msg,
+                                               --(msg.trans_static.ttl),
+                                               msg.trans_static.timestamp,
+                                               msg.trans_static.creator,
+                                               node->data->key);
+            }
+        }
+        else {
+            node->data->s_state.received = 0;
+        }
+
+        //management of fail-safe machanism
+    } else if (env_dissemination_mode == DANDELIONPLUS &&
+            node->data->s_state.received > 0 &&                                              //just for nodes that received a message during the stem phase
+            (node->data->key >= actual_dos_nodes || node->data->key == victim) &&            //attackers excluded
+            (simclock - node->data->s_state.received > dand_plus_waiting) ){                 //message not received back
             TransMsg     msg;
             // Defining the message type
             msg.trans_static.type = 'T';
-            msg.trans_static.timestamp = simclock;
-            msg.trans_static.ttl       = env_max_ttl;
-            msg.trans_static.transid   = RND_Interval(S, 0, MAXINT - 1);
-            msg.trans_static.creator   = node->data->key;
+            msg.trans_static.timestamp = node->data->s_state.received;
+            msg.trans_static.ttl       = env_dandelion_fluff_steps -1;               //just go to the fluff phase, broadcast the transaction
+          //  msg.trans_static.transid   = RND_Interval(S, 0, MAXINT - 1);
+            msg.trans_static.creator   = victim;
             lunes_forward_to_neighbors(node,
                                            &msg,
                                            --(msg.trans_static.ttl),
                                            msg.trans_static.timestamp,
                                            msg.trans_static.creator,
                                            node->data->key);
-        }
-        else {
-            node->data->s_state.received = 0;
-        }
+            node->data->s_state.received = -1;
     }
 }
 
 void lunes_dos_user_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
     // Time-To-Live check
     if (msg->trans.trans_static.ttl > 0) {
-        if (node->data->key != msg->trans.trans_static.creator && node->data->s_state.received == 0 && node->data->key >= number_dos_nodes){
-            node->data->s_state.received = 1;
+        if (node->data->key != msg->trans.trans_static.creator && node->data->s_state.received == 0 && node->data->key >= actual_dos_nodes){
+            if (msg->trans.trans_static.ttl > env_dandelion_fluff_steps){
+                node->data->s_state.received = simclock;
+            } else {
+                node->data->s_state.received = -1;
+            }
 
-                fprintf(stdout, "TR: %.0f,%d\n", simclock, node->data->key);
+                fprintf(stdout, "TR: %.0f,%d, %d\n", simclock, node->data->key, msg->trans.trans_static.ttl);
                 lunes_forward_to_neighbors(node,
                                            msg,
                                            --(msg->trans.trans_static.ttl),
                                            msg->trans.trans_static.timestamp,
                                            msg->trans.trans_static.creator,
                                            node->data->key);
+        }
+        else if (node->data->s_state.received != 0 && msg->trans.trans_static.ttl <= env_dandelion_fluff_steps){      //received it back during the fluff phase
+            node->data->s_state.received = -1;
         }
     }
 }

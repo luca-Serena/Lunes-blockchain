@@ -23,6 +23,7 @@
 #define BROADCAST                  0    // Probabilistic broadcast
 #define GOSSIP_FIXED_PROB          1    // Fixed probability
 #define DANDELION                  8
+#define DANDELIONPLUS              6
 //
 #ifdef DEGREE_DEPENDENT_GOSSIP_SUPPORT
 #define DEGREE_DEPENDENT_GOSSIP    7    // Degree Dependent Gossip
