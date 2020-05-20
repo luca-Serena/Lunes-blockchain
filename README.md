@@ -136,7 +136,7 @@ attacker hashrate - number of succeded attacks
 To evaluate DoS attack first #define TXDEBUG (sim.parameters.h), then run get_dataDOS.sh and plotDos.py in the results folder
 MathplotLib python library needed for plotting the result.
 
-## Documentation ([Doxygen](https://github.com/doxygen/doxygen)
+## Documentation ([Doxygen](https://github.com/doxygen/doxygen))
 
 Run `doxygen` in this folder to generate a HTML and a LaTeX report.
 
