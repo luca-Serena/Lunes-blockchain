@@ -20,10 +20,11 @@ The scripts to be executed in order to use the program are the following:
 #		<#EDGES>		number of edges for each node
 #		<MAX_DIAMETER>		max diameter of the generated graphs
 #
-#		example: ./make-corpus 100 2 8
-#			It generates a corpus (NUMBERRUNS) graphs each one composed
-#			of 100 nodes, each node will have 2 edges, and each graph will
-#			have a diameter less or equal to 8
+#		example: ./make-corpus 1000 4 8
+#			It generates a corpus of (NUMBERRUNS) graphs each one composed
+#			of 1000 nodes and with 4 average connections per node (4000 total edges).
+#			Each graph will have a diameter minor or equal to 8 if possible
+#			
 
 - run-blockchain
 
@@ -35,8 +36,8 @@ The scripts to be executed in order to use the program are the following:
 #		-t		attack to be performed. The options are 51 for 51% attack, selfish for selfish mining attack, dos for denial of service attack
 #               -d              debugger to use, i.e. gdb
 #		
-#		example: ./run-blockchain -n 500 -t 51
-#		It simulates the 51% attack on a network of 500 nodes
+#		example: ./run-blockchain -n 1000 -t 51
+#		It simulates the 51% attack on a network of 1000 nodes
 #		If no attack is chosen you can anyway observe the blockchain behaviour, whose log will be available in test_normal.txt
 
 
@@ -45,16 +46,24 @@ The scripts to be executed in order to use the program are the following:
 #		 ./evaluate51.sh
 # 		It parses the files outputs/test-51-@.txt where @ is the hashrate of the attacker producing the output file 51-res.txt, whose records are in the format:
 #		attacker hashrate -  number of blocks in the main chain mined by the attacker -  length of the longest chain
+#		With hashrate of the attacker we mean the percentage of the computational power of the whole network owned by the attacker
 #				
 
 
 - evaluateSelfish.sh
 # 	to evaluate selfish mining attack, usage: 
 #		./evaluateSelfish.sh
-# 		It parses the files outputs/test-Selfish-@.txt where @ is the hashrate of the attacker 
+# 		It parses the files outputs/test-Selfish-@.txt where @ is the hashrate of the attacker, 
 #		producing the output file selfish-res.txt, whose records are in the format:
 #		attacker hashrate -  number of blocks in the main chain mined by the attacker -  length of the longest chain
+#		With hashrate of the attacker we mean the percentage of the computational power of the whole network owned by the attacker
 #			
+
+-evaluateDos.sh
+#	to evaluate Denial of Service attack, usage:
+#		It parses the files output/test-Selfish-@.txt there @ is the percentage of malicious nodes who don't relay the transaction of the victim,
+#		producing the output file dos-res.txt, whose records are in the format:
+#		percentage of malicious nodes - average number of honest nodes who receive the message within an epoch - average coverage among honest nodes
 
 WARNING: to work correctly LUNES-blockchain needs a lot of disk space for
    	 log files and temporary files that are used for the performance
@@ -81,6 +90,7 @@ http://pads.cs.unibo.it/dokuwiki/doku.php?id=pads:gaia-apis
 	BROADCAST 			0
 	FIXED PROBABILITY		1
 	DANDELION			8
+	DANDELION++			6
 
 3)	(GAIA specific)
 	MFACTOR, migration factor (default value is 3)
@@ -102,7 +112,7 @@ http://pads.cs.unibo.it/dokuwiki/doku.php?id=pads:gaia-apis
 	-	GOSSIP_FIXED_PROB: 		FIXED_PROB_THRESHOLD
 		probability threshold of the fixed probability dissemination
 
-	-	DANDELION:	 		DANDELION_FLUFF_PHASE
+	-	DANDELION and DANDELION++:	DANDELION_FLUFF_PHASE
 		number of steps of the fluff phase		
 
 
