@@ -45,7 +45,7 @@ USAGE: ./run-blockchain --nodes|-n #SMH [--test|-t TESTNAME] [--debug|-d DEBUGCM
 	[DEBUGCMD] used for injecting *trace commands (optional)
 ```
 
-For example to run a simple simulation execute `./run-blockchain -n 10000`. This will prints all logs in `stdout`. Logs are enabled or disable using `#define` statements in [`sim-parameters.h`](./sim-parameters.h).
+For example to run a simple simulation execute `./run-blockchain -n 10000`. This will prints all logs in `stdout`. Logs are enabled or disabled using the `#define` statements in [`sim-parameters.h`](./sim-parameters.h).
 
 ```c
 // stale blocks debug: prints all msgs with rejected blocks
@@ -68,7 +68,7 @@ Logs for mined and received blocks are enabled by default.
 
 **Warning**: enabling logs will reduces performances and increments RAM usage.
 
-To execute some attack scenarios user the `--test` flag with `51`, `selfish` or `dos`. This flag initialize the simulator to run ALL tests with this configurations. Each run's output is saved in a `txt` file inside the folder `./outputs`.
+To execute some attack scenarios use the `--test` flag with `51`, `selfish` or `dos`. This flag initializes the simulator to run ALL tests with this configurations. Each run's output is saved in a `txt` file inside the folder `./outputs`.
 
 For example running `./run-run-blockid -n 10000 -t 51` will perform `100` tests with a single attacker with increasing hashrate (from 1 to 100). Outputs are collected in the `./outputs` folder.
 
@@ -162,5 +162,7 @@ dos attack has been tested with both probabilistic broadcast and dandelion as tr
 ## Contacts
 
 Gabriele D'Angelo: <g.dangelo@unibo.it>
+
 Edoardo Rosa: <edoardo.rosa@studio.unibo.it>
+
 Luca Serena <luca.serena2@unibo.it>
