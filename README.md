@@ -32,7 +32,8 @@ Run `make` inside this folder to compile the binary: `blockchain`.
 
 ## Usage
 
-First of all to create a corpus for the simulator run `./make-corpus`.
+First of all to create a corpus for the simulator run `./make-corpus <#NODES> <#EDGES> <#MAX_DIAMETER>.` 
+For example  ./make-corpus 1000 4 8 will create a graph with 1000 nodes, 4000 edges and a maximum diameter minor or equal than 8
 
 To start the run use `run-blockchain` Bash script: this will take care of sourcing and setting all global variables.
 
@@ -45,7 +46,7 @@ USAGE: ./run-blockchain --nodes|-n #SMH [--test|-t TESTNAME] [--debug|-d DEBUGCM
 	[DEBUGCMD] used for injecting *trace commands (optional)
 ```
 
-For example to run a simple simulation execute `./run-blockchain -n 10000`. This will prints all logs in `stdout`. Logs are enabled or disabled using the `#define` statements in [`sim-parameters.h`](./sim-parameters.h).
+For example to run a simple simulation execute `./run-blockchain -n 1000`. This will prints all logs in `stdout`. Logs are enabled or disabled using the `#define` statements in [`sim-parameters.h`](./sim-parameters.h).
 
 ```c
 // stale blocks debug: prints all msgs with rejected blocks
@@ -62,6 +63,9 @@ For example to run a simple simulation execute `./run-blockchain -n 10000`. This
 
 // activation of the new configuration with forking allowed
 #define FORKING
+//
+// defining DOS it's possible to simulate the Denial of Service attack
+#define DOS
 ```
 
 Logs for mined and received blocks are enabled by default.
@@ -151,13 +155,23 @@ This execution mode will run 100 times the main simulation using an increasing v
  
 Output of this tests can be found in `./outputs` directory with the name: `test-51-H.txt` with **H** the value of the attacker's hashrate.
 
+##Selfish mining
+Also here the execution will run 100 times the main simulation using an increasing value of the hashrate of an attacker
+
+Output of this tests can be found in `./outputs` directory with the name: `test-selfish-H.txt` with **H** the value of the attacker's hashrate.
+
+#DOS
+The execution is divided into epochs, each one last the same number of steps as the time to live for messages. In every epoch a victim node is chosen and it's evaluated the percentage of nodes among the honest ones that manage to receive a message. 
+
+Output of this tests can be found in `./outputs` directory with the name: `test-dos-H.txt` with **H** the percentage of malicious nodes in the network.
+
 #### Tests
 
-51% attack has been tested both with 9 pools (whose overall hashrate is 82,7%) and without any pool. The results slightly differ, in the no pools configuration the number of succeded attacks is higher. Then the attack can be tested with a different
+51% attack has been tested both with 9 pools (whose overall hashrate is 82,7%) and without any pool. The pools are dealt as nodes with a very high hashrate, that represent what in the real life are groups of miners who put together their computing power in order to have a better chance to mine a node. The results between the two configuration slightly differ, in the no pools configuration the number of succeded attacks is higher. Then the attack can be tested with different network topologies and with a different number of nodes and edges.
 
-selfish mining has also been tested both with 9 pools and with no pools. The results are simular but in the no pools configuration the number of succeded attacks is slightly higher
+Selfish mining has also been tested both with 9 pools and with no pools. The results are simular but in the no pools configuration the number of succeded attacks is slightly higher.
 
-dos attack has been tested with both probabilistic broadcast and dandelion as transaction dissemination protocol. It turned out that the used gossip algorithm is not a factor for the outcome of the test.
+DoS attack has been tested with the proposed gossip algorithms. It turned out that Dandelion is much more prone to the attack with respect to the other protocols. However using the fail-safe machanism of Dandelion++ it's possible to reach the broadcast coverage levels.
 
 ## Contacts
 
