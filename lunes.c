@@ -1301,6 +1301,7 @@ void lunes_dos_user_control_handler(hash_node_t *node) {
     if ((int)simclock % env_max_ttl == 0 && simclock + env_max_ttl < 5000){  //da parametrizzare
         if (node->data->key == victim){
             fprintf(stdout, "victim: %d\n", victim);
+            actual_dos_nodes =0;
             if (victim < number_dos_nodes){                  //manage the case the victim has id minor than number_dos_nodes
                 actual_dos_nodes=number_dos_nodes +1;
             } else {
@@ -1324,10 +1325,14 @@ void lunes_dos_user_control_handler(hash_node_t *node) {
                                                msg.trans_static.timestamp,
                                                msg.trans_static.creator,
                                                node->data->key);
+                node->data->s_state.received = simclock;
             }
         }
-        else {
-            node->data->s_state.received = 0;
+        else if (actual_dos_nodes > node->data->key){   //attackers are like they already received the message 
+            node->data->s_state.received = -1;
+        }
+        else { //honest nodes that are not the victim
+            node->data->s_state.received = 0;           //message has to be received
         }
 
         //management of fail-safe machanism
@@ -1355,23 +1360,35 @@ void lunes_dos_user_control_handler(hash_node_t *node) {
 void lunes_dos_user_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
     // Time-To-Live check
     if (msg->trans.trans_static.ttl > 0) {
-        if (node->data->key != msg->trans.trans_static.creator && node->data->s_state.received == 0 && node->data->key >= actual_dos_nodes){
-            if (msg->trans.trans_static.ttl > env_dandelion_fluff_steps){
-                node->data->s_state.received = simclock;
-            } else {
+        if (node->data->s_state.received == 0) {                            //still didn't receive anything and it's not an attacker nor the creator
+            if (msg->trans.trans_static.ttl > env_dandelion_fluff_steps){   //if we're in the stem phase
+                node->data->s_state.received = simclock;                    //information needed for dandelion++ fail-safe mechanism
+            } else {                                                        //we're in the fluff phase, nothing more to be done in this epoch
                 node->data->s_state.received = -1;
             }
 
-                fprintf(stdout, "TR: %.0f,%d, %d\n", simclock, node->data->key, msg->trans.trans_static.ttl);
+            fprintf(stdout, "TR: %.0f,%d, %d\n", simclock, node->data->key, msg->trans.trans_static.ttl);
+            lunes_forward_to_neighbors(node,
+                                        msg,
+                                        --(msg->trans.trans_static.ttl),
+                                        msg->trans.trans_static.timestamp,
+                                        msg->trans.trans_static.creator,
+                                        node->data->key);
+        }
+        else if (msg->trans.trans_static.ttl < env_dandelion_fluff_steps){   //received it back during the fluff phase, work done
+            node->data->s_state.received = -1;
+        }
+        //if the creator receives back the transaction during the stem phase, then it still relays it
+        else if (node->data->s_state.received > 0 && 
+                (env_dissemination_mode == DANDELIONPLUS || env_dissemination_mode == DANDELION)/* &&
+                msg->trans.trans_static.ttl > env_dandelion_fluff_steps*/){
                 lunes_forward_to_neighbors(node,
                                            msg,
                                            --(msg->trans.trans_static.ttl),
                                            msg->trans.trans_static.timestamp,
                                            msg->trans.trans_static.creator,
                                            node->data->key);
-        }
-        else if (node->data->s_state.received != 0 && msg->trans.trans_static.ttl <= env_dandelion_fluff_steps){      //received it back during the fluff phase
-            node->data->s_state.received = -1;
+                node->data->s_state.received = simclock;
         }
     }
 }
