@@ -34,6 +34,7 @@ extern double *rates;
 extern int     atk_hashrate;
 extern int     number_dos_nodes;
 extern int     env_miners_count;
+extern int    *attackers;
 
 /* ************************************************************************* */
 /*           D A T A    S T R U C T U R E S    M A N A G E M E N T           */
@@ -111,14 +112,14 @@ hash_node_t *hash_insert(enum HASH_TYPE type, hash_t *tptr, struct hash_data_t *
         node->data->miner      = 1;
         node->data->attackerid = tptr->count;
         node->data->hashrate   = atk_hashrate;
-    } else {
+    } else {/*
         // Enabled only during a DOS test (filtering mode)
         // Target of the attack is the node 337
         if (tptr->count < number_dos_nodes && tptr->count != victim) {
             node->data->attackerid = tptr->count;
-        }
+        }*/
 
-        // Get and save the hashrate for this node
+        //Get and save the hashrate for this node
         if (tptr->count < env_miners_count) {
             node->data->hashrate = rates[tptr->count];
             node->data->miner    = 1;
@@ -126,6 +127,18 @@ hash_node_t *hash_insert(enum HASH_TYPE type, hash_t *tptr, struct hash_data_t *
             node->data->miner = 0;
         }
     }
+    #ifdef DOS
+    if (number_dos_nodes > 0){
+        for (int i = 0; i < number_dos_nodes; i++){
+            if (node->data->key == attackers[i]){
+                node->data->attackerid = 1;
+                break;
+            }
+        }
+    }
+    #endif
+
+
 
     node->next      = tptr->bucket[h];
     tptr->bucket[h] = node;
