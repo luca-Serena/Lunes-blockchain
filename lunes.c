@@ -406,7 +406,7 @@ void lunes_real_forward(hash_node_t *node, Msg *msg, unsigned short ttl, float t
             txid = msg->trans.trans_static.transid;
             if (ttl >= env_dandelion_fluff_steps ){                   //stem phase
                 int neighbors = node->data->num_neighbors;
-                int selectedIndex = rand() % neighbors;             //just sending the message to the neighbor of that index
+                int selectedIndex = RND_Interval(S, 0, neighbors - 1);            //just sending the message to the neighbor of that index
                 int iterIndex = 0;
                 while (g_hash_table_iter_next (&iter, &key, &destination)) {
 
@@ -417,7 +417,6 @@ void lunes_real_forward(hash_node_t *node, Msg *msg, unsigned short ttl, float t
                         execute_trans (simclock + FLIGHT_TIME, sender, receiver, ttl, txid, from, to, timestamp, creator);
                         break;
                     }
-
                     iterIndex++;
                 }
             } else {                                                                //fluff phase, sending messages to everyone, except the forwarder
@@ -569,7 +568,7 @@ void lunes_forward_to_neighbors(hash_node_t *node, Msg *msg, unsigned short ttl,
  */
 void lunes_send_trans_to_neighbors(hash_node_t *node, int txid, int from, int to) {
     // Iterator to scan the whole state hashtable of neighbors
-    GHashTableIter iter;
+    GHashTableIter iter; 
     gpointer       key, destination;
 
     // All neighbors
@@ -577,7 +576,7 @@ void lunes_send_trans_to_neighbors(hash_node_t *node, int txid, int from, int to
 
     while (g_hash_table_iter_next(&iter, &key, &destination)) {
         // It's a standard trans message
-        execute_trans(simclock + FLIGHT_TIME, hash_lookup(stable, node->data->key), hash_lookup(table, *(unsigned int *)destination), env_max_ttl, txid, from, to, simclock, node->data->key);
+        execute_trans(simclock + FLIGHT_TIME, hash_lookup(stable, node->data->key), hash_lookup(table, *(unsigned int *)destination), env_dandelion_fluff_steps - 1, txid, from, to, simclock, node->data->key);
     }
 }
 
@@ -762,10 +761,8 @@ void lunes_user_control_handler(hash_node_t *node) {
 	        count = count +1;
 	    }
 	    node->data->num_neighbors = count;
-	    fprintf(stdout, "NODE: %d, DEGREE: %d\n", node->data->key, node->data->num_neighbors);
     }
     if ((int) simclock % INTERMEDIATE_STEPS == 0) {
-
 	    int ltblock = node->data->latestblock;    //index of latest block
 
 	    // Check if the node has mined this block
@@ -774,7 +771,6 @@ void lunes_user_control_handler(hash_node_t *node) {
 	        double p           = mining_probability(node->data->hashrate, simclock);
 	        // Avoid luck
 	        if (p > random_mine && node->data->internal_timer > 2) {
-
 	        	#ifdef FORKING
                 Block *b = &node->data->s_state.blockchain[ltblock];
 	            int newId = RND_Interval(S, 0, MAXINT - 1);
@@ -839,7 +835,7 @@ void lunes_user_control_handler(hash_node_t *node) {
 	                }
 	            }else {
 	                // Broadcasting the mined ("old") block to all neighbors
-	                //  lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[ltblock]);
+                    lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[ltblock]);
 	                // clock - nodeid - blockminedid - hashrate
 	                #ifdef FORKING
 	                fprintf(stdout, "BS: %.0f,%d,_%d,%d,%f,%d\n", simclock, node->data->key, newId, b->prevId, node->data->hashrate, b-> position);
@@ -1092,7 +1088,7 @@ void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
 	            	int pos = is_in_heads (heads, prevId);                                 //!= 1 means the block of given id is among head-blocks
 	            	if (pos != -1){                                                        //if previous block is a head block
 	            		replace_heads (heads, pos, receivedBlock);                         // new block replaces his previous among head-blocks
-	            	} else {                                                               //if the previous block not a head block but it's in the blockchain            	    
+	            	} else {                                                               //if the previous block not a head block           	    
 	            	    if (is_in_blockchain(&node->data->s_state.blockchain[0], prevId, ltblock)!= -1)	{   //if previous block is not a head block but it's in the blockchain
 	            		    int next = is_next_in_blockchain(&node->data->s_state.blockchain[0], node->data->latestblock, receivedBlock->id);  //Try to find the following of the received block
 	            		    while (next != -1){                                            //try to find, if any, the last descendant
@@ -1301,13 +1297,6 @@ void lunes_dos_user_control_handler(hash_node_t *node) {
     if ((int)simclock % env_max_ttl == 0 && simclock + env_max_ttl < 5000){  //da parametrizzare
         if (node->data->key == victim){
             fprintf(stdout, "victim: %d\n", victim);
-            actual_dos_nodes =0;
-            if (victim < number_dos_nodes){                  //manage the case the victim has id minor than number_dos_nodes
-                actual_dos_nodes=number_dos_nodes +1;
-            } else {
-                actual_dos_nodes = number_dos_nodes;
-            }
-
             if (env_dissemination_mode == BROADCAST || env_dissemination_mode == GOSSIP_FIXED_PROB ){
                 lunes_send_trans_to_neighbors(node, 0,0,0);
             } else {
@@ -1325,21 +1314,23 @@ void lunes_dos_user_control_handler(hash_node_t *node) {
                                                msg.trans_static.timestamp,
                                                msg.trans_static.creator,
                                                node->data->key);
-                node->data->s_state.received = simclock;
             }
+            node->data->s_state.received = simclock;
         }
-        else if (actual_dos_nodes > node->data->key){   //attackers are like they already received the message 
+        //else if (actual_dos_nodes > node->data->key){   //attackers are like they already received the message 
+        else if (node->data->attackerid == 1){ 
             node->data->s_state.received = -1;
         }
         else { //honest nodes that are not the victim
-            node->data->s_state.received = 0;           //message has to be received
+            node->data->s_state.received = 0;            //message has to be received
         }
 
         //management of fail-safe machanism
     } else if (env_dissemination_mode == DANDELIONPLUS &&
-            node->data->s_state.received > 0 &&                                              //just for nodes that received a message during the stem phase
-            (node->data->key >= actual_dos_nodes || node->data->key == victim) &&            //attackers excluded
-            (simclock - node->data->s_state.received > dand_plus_waiting) ){                 //message not received back
+            node->data->s_state.received > 0 &&                                          //just for nodes that managed the message during the stem phase
+            //(node->data->key >= actual_dos_nodes || node->data->key == victim) &&      //attackers excluded
+            (node->data->attackerid != 1 || node->data->key == victim) &&                //if it's the victim or a honest node 
+            (simclock - node->data->s_state.received > dand_plus_waiting) ){             //message not received back
             TransMsg     msg;
             // Defining the message type
             msg.trans_static.type = 'T';
@@ -1353,35 +1344,38 @@ void lunes_dos_user_control_handler(hash_node_t *node) {
                                            msg.trans_static.timestamp,
                                            msg.trans_static.creator,
                                            node->data->key);
+            //lunes_send_trans_to_neighbors(node, 0,0,0);
             node->data->s_state.received = -1;
     }
 }
 
 void lunes_dos_user_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
     // Time-To-Live check
-    if (msg->trans.trans_static.ttl > 0) {
+    if (msg->trans.trans_static.ttl > 0 ) {
         if (node->data->s_state.received == 0) {                            //still didn't receive anything and it's not an attacker nor the creator
-            if (msg->trans.trans_static.ttl > env_dandelion_fluff_steps){   //if we're in the stem phase
+            if (msg->trans.trans_static.ttl >= env_dandelion_fluff_steps){   //if we're in the stem phase
                 node->data->s_state.received = simclock;                    //information needed for dandelion++ fail-safe mechanism
             } else {                                                        //we're in the fluff phase, nothing more to be done in this epoch
                 node->data->s_state.received = -1;
             }
 
             fprintf(stdout, "TR: %.0f,%d, %d\n", simclock, node->data->key, msg->trans.trans_static.ttl);
-            lunes_forward_to_neighbors(node,
-                                        msg,
-                                        --(msg->trans.trans_static.ttl),
-                                        msg->trans.trans_static.timestamp,
-                                        msg->trans.trans_static.creator,
-                                        node->data->key);
+            if ((int)simclock % env_max_ttl != env_max_ttl - 1){            //epoch is not over
+                lunes_forward_to_neighbors(node,
+                                            msg,
+                                            --(msg->trans.trans_static.ttl),
+                                            msg->trans.trans_static.timestamp,
+                                            msg->trans.trans_static.creator,
+                                            node->data->key);
+            }
         }
         else if (msg->trans.trans_static.ttl < env_dandelion_fluff_steps){   //received it back during the fluff phase, work done
             node->data->s_state.received = -1;
         }
         //if the creator receives back the transaction during the stem phase, then it still relays it
-        else if (node->data->s_state.received > 0 && 
-                (env_dissemination_mode == DANDELIONPLUS || env_dissemination_mode == DANDELION)/* &&
-                msg->trans.trans_static.ttl > env_dandelion_fluff_steps*/){
+        else if (node->data->s_state.received > 0 &&                      /* implicitly msg->trans.trans_static.ttl > env_dandelion_fluff_steps*/
+                (env_dissemination_mode == DANDELIONPLUS || env_dissemination_mode == DANDELION) &&
+                (int)simclock % env_max_ttl != env_max_ttl - 1){
                 lunes_forward_to_neighbors(node,
                                            msg,
                                            --(msg->trans.trans_static.ttl),

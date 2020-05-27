@@ -76,8 +76,10 @@ extern float  env_global_hashrate;                  /* Total Hashrate of Bitcoin
 extern double env_difficulty;                       /* Actual Bitcoin network difficulty */
 extern int    env_miners_count;                     /* Number of miners for this current run */
 extern int    number_dos_nodes;                     /* dos attackers that don't forward victim messages  */
-extern int    victim;
 
+#ifdef DOS
+extern int    victim;                               /* ID of the victim node*/
+#endif
 
 /* ************************************************************************ */
 /*       L O C A L	V A R I A B L E S			                            */
@@ -282,7 +284,6 @@ void execute_trans(double ts, hash_node_t *src, hash_node_t *dest, unsigned shor
         fflush(stdout);
         exit(-1);
     }
-
     // Real send
     GAIA_Send(src->data->key, dest->data->key, ts, (void *)&msg, message_size);
 
@@ -413,7 +414,6 @@ void execute_link(double ts, hash_node_t *src, hash_node_t *dest) {
 void user_trans_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
     // Statistics
     lp_total_received_trans++;
-
     #ifdef TRACE_DISSEMINATION
     float difference;
     difference = simclock - msg->trans.trans_static.timestamp;
@@ -550,10 +550,18 @@ void user_control_handler() {
         lunes_load_graph_topology();
     }
 
-    if (number_dos_nodes > 0 && (int)simclock % env_max_ttl == 0 ){
-        victim++;
-        
+    #ifdef DOS
+    if (number_dos_nodes > 0 && (int)simclock > EXECUTION_STEP && (int) simclock % env_max_ttl == 0){    // after TTL steps a new epoch occurs
+        hash_node_t * victNode =  NULL;
+        do {
+            victim ++;                                                                                   // new epoch --> new victim
+            if (victim >= NSIMULATE){                                                                    // no more available victim nodes
+                exit(-1);
+            }
+            victNode = hash_lookup(table, victim);                                                  
+        } while (victNode->data->attackerid == 1);                                                       // victim can't be an attacker
     }
+    #endif
 
     // Only if in the aggregation phase is finished &&
     // if it is possible to send messages up to the last simulated timestep then the statistics will be
@@ -563,7 +571,7 @@ void user_control_handler() {
         for (h = 0; h < stable->size; h++) {
             for (node = stable->bucket[h]; node; node = node->next) {
                 // Calling the appropriate LUNES user level handler
-                if (number_dos_nodes > 0) {
+                if (number_dos_nodes > 0) {                                                   // dos tests have their special functions
                     lunes_dos_user_control_handler(node);
                 } else {
                     lunes_user_control_handler(node);
@@ -590,7 +598,7 @@ void user_model_events_handler(int to, int from, Msg *msg, hash_node_t *node) {
        /* if (number_dos_nodes > 0 && node->data->attackerid == node->data->key && msg->trans.trans_static.creator == victim) {
             break;
         }*/
-        if ( number_dos_nodes > node->data->key ){
+        if (node->data->attackerid == 1 ){
             break;
         }
         user_trans_event_handler(node, from, msg);

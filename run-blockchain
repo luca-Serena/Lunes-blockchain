@@ -34,6 +34,7 @@ while [[ $# -gt 0 ]]; do
     ;;
   -d | --debug)
     DEBUG="$2"
+    echo "Debug value $DEBUG"
     shift
     shift
     ;;
@@ -67,7 +68,7 @@ export MFACTOR=1.2
 export LOAD=0
 export MAX_TTL=14 # DEFAULT=16
 export FREERIDER="0"
-export DISSEMINATION=0 # 0 = BROADCAST, 7 = DDF2
+export DISSEMINATION=6 # 0 = BROADCAST, 7 = DDF2
 export BROADCAST_PROB_THRESHOLD=70
 export FIXED_PROB_THRESHOLD=70
 export DANDELION_STEPS_FLUFF_PHASE=12
@@ -75,10 +76,10 @@ export PROBABILITY_FUNCTION=2DIFFICULTY
 export FUNC_COEFF_HIGHER=4
 export FUNC_COEFF_LOWER=74
 export FUNCTION_COEFFICIENT="$FUNC_COEFF_HIGHER.$FUNC_COEFF_LOWER"
-export NUMBER_HEADS=10
-export INTERMEDIATE_STEPS=2 #after (INTERMEDIATE_STEPS - 1) steps of the simulation just for receiving messages you try to mine a block, usually slightly larger than diameter
+export NUMBER_HEADS=5
+export INTERMEDIATE_STEPS=8 #after (INTERMEDIATE_STEPS - 1) steps of the simulation just for receiving messages you try to mine a block, usually slightly larger than diameter
 export END_CLOCK=$((5000 * $INTERMEDIATE_STEPS)) #5000 steps in which it's possible to mine a block, the others are just to propagate messages
-export MINERS_COUNT=40 # Percentage of miners
+export MINERS_COUNT=60 # Percentage of miners
 export DIFFICULTY=$(http --json https://api.blockchain.info/stats | jq -r '.difficulty')
 export GLOBAL_HASHRATE=$(printf %.0f000000000 "$(http --json https://api.blockchain.info/stats | jq -r '.hash_rate')")
 # other source: https://bitcoinwisdom.com/bitcoin/difficulty
@@ -174,6 +175,7 @@ fi
 #DoS
 if [[ "${TEST}" == "dos" ]]; then
 	if grep -E '^#define DOS' sim-parameters.h; then
+     ./getAttackers.py $TOT_SMH > 'attackers.txt'
 	   mkdir -p "./outputs"
 	   for i in {1..99}; do
 	  # SImulation MAnager (SIMA) execution
@@ -271,8 +273,3 @@ if [[ "${TEST}" == "dos" ]]; then
   exit -1
 fi
 END
-
-# UTILS
-
-# Ugly test: the sum of all hasrates must be 100
-# cat test.txt | grep NODE | awk '{print $4}' | cut -d "%" -f 1 | awk '{s+=$1} END {print s}'

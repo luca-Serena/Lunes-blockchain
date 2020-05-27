@@ -33,6 +33,7 @@ int number_dos_nodes = -1;
 // selfish[2] = status of the attack (-1 = disabled, 0 active and even with the blockchain, 1
 //              attacker is 1 block ahead, 3 attacker sent the mined block
 int *selfish;
+int *attackers;
 
 // SImulation MAnager (SIMA) information and localhost identifier
 static char LP_HOST[64];      // Local hostname
@@ -80,8 +81,9 @@ double         env_function_coefficient;      // Coefficient of the probability 
 float  env_global_hashrate;                   /* Total Hashrate of Bitcoin Network in H/min */
 double env_difficulty;                        /* Actual Bitcoin network difficulty */
 int    env_miners_count;                      /* Number of miners for this current run */
-int victim = 0;
-
+#ifdef DOS
+int victim = -1;                              /* ID of the victim node. It's incremented each epoch*/
+#endif
 /* ************************************************************************ */
 /*                      Hash Tables		                                    */
 /* ************************************************************************ */
@@ -512,6 +514,7 @@ int main(int argc, char *argv[]) {
     selfish[0] = -1;
     selfish[1] = -1;
     selfish[2] = -1;
+    attackers= (int *)malloc(1 * sizeof(int));         //list of malicious nodes, read from attackers.txt
 
     if (argc > 4) {
         if (strcmp(argv[4], "--attacker") == 0) {
@@ -522,6 +525,23 @@ int main(int argc, char *argv[]) {
             float coefficient = (float) NSIMULATE / 100;
             number_dos_nodes = coefficient * number_dos_nodes;
             fprintf(stdout, "%d %d\n", number_dos_nodes, NSIMULATE);
+
+            FILE *fp = fopen("attackers.txt", "r");
+            if(fp == NULL) {
+                perror("Unable to open file!");
+                exit(1);
+            }
+            attackers= (int *)realloc(attackers,(number_dos_nodes - 1) * sizeof(int));        //memorizing the array of attackers
+            char *line = NULL;
+            size_t len = 5;
+            int iter = 0;
+
+            while(getline(&line, &len, fp) != -1 && iter < number_dos_nodes) {
+                 int t = atoi (line);
+                 attackers[iter] = t;
+                 iter++;
+            }
+
            /* if (number_dos_nodes >= victim){   //managed differently in the new version of dos
                 number_dos_nodes ++;
             }*/
