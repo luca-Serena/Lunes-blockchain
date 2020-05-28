@@ -202,7 +202,7 @@ void add_heads (Block ** heads, Block * newBlock ){
         replace_heads(heads, del, newBlock);
     }
 }
-/*return the index (in the heads list) of the head block with the smallest position
+/*return the index (in the heads list) of the head block with the smallest position or the index of a still NULL cell
  *
  *  @param[in] heads: array of pointers to head-blocks
  */
@@ -213,7 +213,7 @@ int minimum_pos (Block ** heads){
 
 	for (tmp = 0; tmp < number_of_heads; tmp++){
         if (heads[tmp] == NULL){
-            return tmp;
+            return tmp;				//if a cell of heads is still empty no matter which is the minimum value
         } else {
 		    if (heads[tmp]->position < minimum) {
 		      	minimum = heads[tmp]->position;
