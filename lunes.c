@@ -199,7 +199,7 @@ void add_heads (Block ** heads, Block * newBlock ){
     	   replace_heads(heads, del, newBlock);
         }
     }else{ 
-        replace_heads(heads, 0, newBlock);
+        replace_heads(heads, del, newBlock);
     }
 }
 /*return the index (in the heads list) of the head block with the smallest position
@@ -212,7 +212,9 @@ int minimum_pos (Block ** heads){
 	int	tmp;
 
 	for (tmp = 0; tmp < number_of_heads; tmp++){
-        if (heads[tmp] != NULL){
+        if (heads[tmp] == NULL){
+            return tmp;
+        } else {
 		    if (heads[tmp]->position < minimum) {
 		      	minimum = heads[tmp]->position;
 			    position = tmp;
@@ -1083,7 +1085,7 @@ void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
 	            Block ** heads = node->data->s_state.heads;
 	            int prevId =  receivedBlock->prevId;
 	            if (receivedBlock->position == 1){                                         //if it's the first block in the chain
-	            	add_heads(node->data->s_state.heads, receivedBlock);        	       //added to head-blocks
+                    add_heads(node->data->s_state.heads, receivedBlock);        	       //added to head-blocks
 	            } else {
 	            	int pos = is_in_heads (heads, prevId);                                 //!= 1 means the block of given id is among head-blocks
 	            	if (pos != -1){                                                        //if previous block is a head block
