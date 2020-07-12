@@ -89,7 +89,8 @@ int actual_dos_nodes;
 int is_in_heads (Block ** heads , int id){
 	int ret = -1;
 	for (int i =0; i<number_of_heads; i++){    
-        if (heads[i] != NULL){                  
+        if (heads[i] != NULL /*&& sizeof(heads[i])==sizeof(Block *)*/){
+         //   fprintf(stdout, "%s\n", heads[i]);               
 		    if (heads[i]->id == id){
 		        ret = i;
 		      	break;
@@ -202,7 +203,7 @@ void add_heads (Block ** heads, Block * newBlock ){
         replace_heads(heads, del, newBlock);
     }
 }
-/*return the index (in the heads list) of the head block with the smallest position or the index of a still NULL cell
+/*return the index (in the heads list) of the head block with the smallest position
  *
  *  @param[in] heads: array of pointers to head-blocks
  */
@@ -213,7 +214,7 @@ int minimum_pos (Block ** heads){
 
 	for (tmp = 0; tmp < number_of_heads; tmp++){
         if (heads[tmp] == NULL){
-            return tmp;				//if a cell of heads is still empty no matter which is the minimum value
+            return tmp;
         } else {
 		    if (heads[tmp]->position < minimum) {
 		      	minimum = heads[tmp]->position;
@@ -1034,14 +1035,17 @@ void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
             	int pos = msg->block.block_static.minedblock->position;
             	int selfish_0_ind = getIndexById(&node->data->s_state.blockchain[0], node->data->latestblock, selfish[0]); 
             	int selfish_1_ind = getIndexById(&node->data->s_state.blockchain[0], node->data->latestblock, selfish[1]);
-            	int selfish_0_pos = node->data->s_state.blockchain[selfish_0_ind].position;         //position of the latest mined block in attacker's private blockchain
-            	int selfish_1_pos = node->data->s_state.blockchain[selfish_1_ind].position;         //position of the latest received block from the network for the attacker
+            	int selfish_0_pos = selfish_0_ind == -1 ? 0 :
+                    node->data->s_state.blockchain[selfish_0_ind].position;                         //position of the latest mined block in attacker's private blockchain
+            	int selfish_1_pos = selfish_1_ind == -1 ? 0 :
+                    node->data->s_state.blockchain[selfish_1_ind].position;                         //position of the latest received block from the network for the attacker
                 selfish[1] = pos > selfish_1_pos || selfish[1] <= 0 ? receivedblockid : selfish[1]; //update selfish[1] if the position of the received block is greater
                 selfish_1_pos = pos > selfish_1_pos || selfish[1] <= 0 ? pos : selfish_1_pos;       //to determine which is now the block with greatest position received from the network
                 int diff_prev =  selfish_0_pos - selfish_1_pos;                                     //advantage with respect to the network
-                if (diff_prev == 0) {                                                               //zero blocks in advantage
-                    selfish[2] = 0;                                                                 
-                } else if (diff_prev == 1) {                                                        //just one block in advantage, risk of spoiling mining effort, propagate the block
+                if (diff_prev >= 0) {                                                               //zero blocks in advantage
+                    selfish[2] = diff_prev;                                                                 
+                } 
+                /*if (diff_prev == 1) {                                                        //just one block in advantage, risk of spoiling mining effort, propagate the block
                 	int previousId = node->data->s_state.blockchain[selfish_0_ind].prevId;          
                 	int previousIndex = getIndexById (&node->data->s_state.blockchain[0], node->data->latestblock, previousId);
                 	lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[previousIndex]);
@@ -1049,7 +1053,7 @@ void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
                 	lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[selfish_0_ind]);
                 	fprintf(stdout, "BSS: %.0f,%d,%d,%d,%f\n", simclock, node->data->key, node->data->s_state.blockchain[selfish_0_ind].id, node->data->s_state.blockchain[selfish_0_ind].position, node->data->hashrate);                   
                     selfish[2] = 0;
-                }
+                }*/
             	#else
                 int diff_prev = selfish[0] - receivedblockid;
                 selfish[1] = receivedblockid;
@@ -1099,9 +1103,8 @@ void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
 	            		    if (next != -1){                                                //if the next block exists put the lastest of the chain as a head-block
 	            		    	add_heads (heads, &node->data->s_state.blockchain[next]);
 	            		    } else {                                                        // if the next block doesn't exist put the block as a head-block
-	            		    	add_heads (heads, receivedBlock);
-
-	            		    }
+	            		    add_heads (heads, receivedBlock);
+                            }
 	            	    } else {                                                            // previous node not in blockchain, received block is an orphan block
 	            	                                                                      	//ask for the minor position between the position of the received block 
                                                                                             //and the position of the longest head-block
