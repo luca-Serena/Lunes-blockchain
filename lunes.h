@@ -33,8 +33,7 @@ void lunes_user_block_event_handler(hash_node_t *, int, Msg *);
 void lunes_user_askblock_event_handler(hash_node_t *, int, Msg *);
 void lunes_user_register_event_handler(hash_node_t *);
 void lunes_user_control_handler(hash_node_t *);
-double mining_probability(double, double);
-
+void lunes_user_init(hash_node_t *);
 // Support functions
 void lunes_dot_tokenizer(char *, int *, int *);
 void lunes_load_graph_topology();
@@ -50,3 +49,8 @@ typedef struct {
 #endif
 
 #endif /* __LUNES_H */
+
+#ifdef DOS
+void lunes_dos_user_control_handler(hash_node_t *);
+void lunes_dos_user_event_handler(hash_node_t *, int, Msg *);
+#endif

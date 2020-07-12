@@ -38,11 +38,11 @@
 //#define TXDEBUG
 //
 // request for specific blocks from peers
-#define ASKBLOCKDEBUG
+//#define ASKBLOCKDEBUG
 
 #define FORKING
 
-
+#define DOS
 /**************************** MODEL ****************************************/
 //just every 1/INTERMEDIATE_STEPS you try to mine a block
 #define INTERMEDIATE_STEPS  8

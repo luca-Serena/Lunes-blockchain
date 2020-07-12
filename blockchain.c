@@ -294,7 +294,7 @@ static void register_event_handler(int id, int lp) {
         exit(-1);
     }
 
-    fprintf(stdout, "NODE %d: HASHRATE %f%%; IS MINER? %d; IS ATTACKER? %d;\n", node->data->key, node->data->hashrate, node->data->miner, node->data->attackerid);
+    fprintf(stdout, "NODE %d: DEPOSIT %f%%; IS MINER? %d; IS ATTACKER? %d;\n", node->data->key, node->data->deposited, node->data->miner, node->data->attackerid);
     fflush(stdout);
 }
 
@@ -400,60 +400,11 @@ static void UNUSED LoadINI(char *ini_name) {
 static void generate_hashrates(int nodes) {
     // We need to fix some hashrate to simulate some mining pool
     //F2pool
-    double pool0 = 19.5;
-    // BTC.com hashrate
-    double pool1 = 17.1;
-    // AntPool hashrate
-    double pool2 = 10.6;
-    // Poolin hashrate
-    double pool3 = 14.6;
-    //Via BTC
-    double pool4 = 6.8;
-    // BTC.TOP
-    double pool5 = 5;
-    //slashpool
-    double pool6 = 4.1;
-    //bitfury
-    double pool7= 2.3;
-    //bitcoin.com
-    double pool8= 0.4;
-    double pools = pool0 + pool1 + pool2 + pool3 + pool4 + pool5 + pool6 + pool7 + pool8;
-
-    if (atk_hashrate != 0 && atk_hashrate != -1){     
-        pool1 -= pool1 * atk_hashrate / 100;
-        pool2 -= pool2 * atk_hashrate / 100;
-        pool3 -= pool3 * atk_hashrate / 100;
-        pool0 -= pool0 * atk_hashrate / 100;
-        pool4 -= pool4 * atk_hashrate / 100;
-        pool5 -= pool5 * atk_hashrate / 100;
-        pool6 -= pool6 * atk_hashrate / 100;
-        pool7 -= pool7 * atk_hashrate / 100;
-        pool8 -= pool8 * atk_hashrate / 100;
-        pools = pool0 + pool1 + pool2 + pool3 + pool4 + pool5 + pool6 + pool7 + pool8 + atk_hashrate;
-    }
-
+  
     rates = (double *)malloc(nodes * sizeof(double));
-    double sum = 0;
-    rates[0] = pool0;
-    rates[1] = pool1;
-    rates[2] = pool2;
-    rates[3] = pool3;
-    rates[4] = pool4;
-    rates[5] = pool5;
-    rates[6] = pool6;
-    rates[7] = pool7;
-    rates[8] = pool8;
-    for (int i = 9; i < env_miners_count; ++i) {
-        double val = RND_Interval(S, 0.0, 100.0);
-        sum     += val;
+    for (int i = 0; i < env_miners_count; ++i) {
+        double val = RND_Interval(S, 0.0, 10.0);
         rates[i] = val;
-    }
-
-    // resize the pools in order to maintain the proportion (and the 100% of overall hashrate) even 
-    // with the presence of an attacker with a given hashrate
-    double desired = 100.0 - pools;
-    for (int i = 9; i < env_miners_count; i++) {
-        rates[i] = rates[i] / sum * desired;
     }
 }
 /*---------------------------------------------------------------------------*/

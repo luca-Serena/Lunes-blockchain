@@ -103,7 +103,7 @@ hash_node_t *hash_insert(enum HASH_TYPE type, hash_t *tptr, struct hash_data_t *
     node->data->latestblock    = 0;
     node->data->attackerid     = -1;
     node->data->miner          = 0;
-    node->data->hashrate       = 0;
+    node->data->deposited      = 0;
     node->data->s_state.blockchain[0].latesttrans = 0;
     node->data->s_state.blockchain[0].id          = 0;
 
@@ -111,7 +111,7 @@ hash_node_t *hash_insert(enum HASH_TYPE type, hash_t *tptr, struct hash_data_t *
     if (atk_hashrate > 0 && tptr->count == attacker) {
         node->data->miner      = 1;
         node->data->attackerid = tptr->count;
-        node->data->hashrate   = atk_hashrate;
+        node->data->deposited  = atk_hashrate;
     } else {/*
         // Enabled only during a DOS test (filtering mode)
         // Target of the attack is the node 337
@@ -121,14 +121,14 @@ hash_node_t *hash_insert(enum HASH_TYPE type, hash_t *tptr, struct hash_data_t *
 
         //Get and save the hashrate for this node
         if (tptr->count < env_miners_count) {
-            node->data->hashrate = rates[tptr->count];
+            node->data->deposited = rates[tptr->count];
             node->data->miner    = 1;
         } else {
             node->data->miner = 0;
         }
     }
     #ifdef DOS
-    if (number_dos_nodes > 0){
+    if (number_dos_nodes > 0){					//setting which nodes are malicious
         for (int i = 0; i < number_dos_nodes; i++){
             if (node->data->key == attackers[i]){
                 node->data->attackerid = 1;

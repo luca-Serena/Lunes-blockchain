@@ -72,7 +72,6 @@ extern int            number_of_heads;              /* number of head-nodes you 
 extern unsigned int env_probability_function;       /* Probability function for Degree Dependent Gossip */
 extern double       env_function_coefficient;       /* Coefficient of probability function */
 #endif
-extern float  env_global_hashrate;                  /* Total Hashrate of Bitcoin Network in H/min */
 extern double env_difficulty;                       /* Actual Bitcoin network difficulty */
 extern int    env_miners_count;                     /* Number of miners for this current run */
 extern int    number_dos_nodes;                     /* dos attackers that don't forward victim messages  */
@@ -409,26 +408,6 @@ void execute_link(double ts, hash_node_t *src, hash_node_t *dest) {
 
 
 /****************************************************************************
- *! \brief TRANS: Upon arrival of a transaction
- */
-void user_trans_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
-    // Statistics
-    lp_total_received_trans++;
-    #ifdef TRACE_DISSEMINATION
-    float difference;
-    difference = simclock - msg->trans.trans_static.timestamp;
-    fprintf(fp_print_trace, "R %010u %010u %03u\n", node->data->key, msg->trans.trans_static.transid, (int)difference);
-    #endif
-
-    // Calling the appropriate LUNES user level handler
-    if (number_dos_nodes > 0){
-        lunes_dos_user_event_handler(node, forwarder, msg);
-    } else {
-        lunes_user_trans_event_handler(node, forwarder, msg);
-    }
-}
-
-/****************************************************************************
  *! \brief BLOCK: Upon arrival of an mined block
  */
 void user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
@@ -568,17 +547,56 @@ void user_control_handler() {
     // affected by some messages that have been sent but with no time to be received
     if ((simclock >= (float)EXECUTION_STEP) && (simclock < (env_end_clock - MAX_TTL))) {
         // For each local SE
-        for (h = 0; h < stable->size; h++) {
-            for (node = stable->bucket[h]; node; node = node->next) {
-                // Calling the appropriate LUNES user level handler
-                if (number_dos_nodes > 0) {                                                   // dos tests have their special functions
-                    lunes_dos_user_control_handler(node);
-                } else {
-                    lunes_user_control_handler(node);
-                }
-            } 
+        if ((int) simclock  == INTERMEDIATE_STEPS) {
+            for (h = 0; h < stable->size; h++) {
+                for (node = stable->bucket[h]; node; node = node->next) {
+                    // Calling the appropriate LUNES user level handler
+                    lunes_user_init(node);
+                } 
+            }
+        }
+        int validator = 0;
+        if ((int) simclock % INTERMEDIATE_STEPS == 0) {
+            validator = getValidator();
+            for (h = 0; h < stable->size; h++) {
+                for (node = stable->bucket[h]; node; node = node->next) {
+                    // Calling the appropriate LUNES user level handler
+                    if (node->data->key == validator){
+                        lunes_user_control_handler(node);
+                    }
+                } 
+            }
         }
     }
+}
+
+/*****************************************************/
+int getValidator(){
+    int          h;
+    hash_node_t *node;
+    // For each local SE
+    double escrow = 0;
+    for (h = 0; h < stable->size; h++) {
+        for (node = stable->bucket[h]; node; node = node->next) {
+            escrow += node->data->deposited;
+        }
+    }
+    double rnd = RND_Interval(S, 0.0, escrow);
+
+    double iter = 0;
+    int boolean = 0;
+    int res = 0;
+    for (h = 0; h < stable->size && boolean == 0; h++ ) {
+        for (node = stable->bucket[h]; node; node = node->next) {
+            iter += node->data->deposited;
+            if (iter >= rnd){
+                res = node->data->key;
+                boolean = 1;
+                break;
+            }
+        }
+    }
+    return res;
 }
 
 /*****************************************************************************
@@ -593,16 +611,7 @@ void user_model_events_handler(int to, int from, Msg *msg, hash_node_t *node) {
     // If the node should perform a DOS attack: not a miner and is an attacker
     // Forward anything from the hardcoded node 337
     switch (msg->type) {
-    // A transaction message
-    case 'T':
-       /* if (number_dos_nodes > 0 && node->data->attackerid == node->data->key && msg->trans.trans_static.creator == victim) {
-            break;
-        }*/
-        if (node->data->attackerid == 1 ){
-            break;
-        }
-        user_trans_event_handler(node, from, msg);
-        break;
+    // A transaction messa
 
     // A link message
     case 'L':
@@ -744,10 +753,6 @@ void user_environment_handler() {
 
     env_difficulty = atof(check_and_getenv("DIFFICULTY"));
     fprintf(stdout, "LUNES___[%10d]: BLOCKCHAIN DIFFICULTY: %f\n", local_pid, env_difficulty);
-
-    // Convert the hashrate from H/s to H/min;
-    env_global_hashrate = atof(check_and_getenv("GLOBAL_HASHRATE")) * 60;
-    fprintf(stdout, "LUNES___[%10d]: GLOBAL HASHRATE: %f H/min\n", local_pid, env_global_hashrate);
 
     env_miners_count = atof(check_and_getenv("MINERS_COUNT")) * NSIMULATE / 100;
     fprintf(stdout, "LUNES___[%10d]: MINERS_COUNT: %d  NSIMULATE: %d  env_miners_count: %f\n", local_pid, env_miners_count, NSIMULATE,atof(check_and_getenv("MINERS_COUNT")));

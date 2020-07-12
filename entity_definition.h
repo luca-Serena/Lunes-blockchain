@@ -65,7 +65,7 @@ typedef struct static_data_t {
     float     time_of_next_check;             // Timestep in which the next check for new block will be created and sent
     Block     blockchain[2500];               // Array of blocks
     #ifdef DOS
-    short     received;
+    short     received;                       //0 not received anything, !=0 received the message, -1 received the message back in the fluff phase
     #endif
 } static_data_t;
 
@@ -73,7 +73,7 @@ typedef struct static_data_t {
 typedef struct hash_data_t {
     int           key;                    // SE identifier
     int           lp;                     // Logical Process ID (that is the SE container)
-    double        hashrate;               // Hashrate of the node (if a miner)
+    double        deposited;               // Hashrate of the node (if a miner)
     int           attackerid;             // ID of the attacker (equal to key)
     int           miner;                  // Boolean: is the node a miner?
     int           internal_timer;         // Used to track mining activity
