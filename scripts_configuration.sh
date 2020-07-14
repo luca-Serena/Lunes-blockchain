@@ -41,7 +41,7 @@ IONICE='ionice -c 3'
 #	Number of LPs to be used:
 #		1 = monolithic (sequential) simulation
 #		> 1 parallel simulation
-LPS=1
+LPS=2
 #
 #	Total number of runs per each configuration
 #	(for statistical purposes)

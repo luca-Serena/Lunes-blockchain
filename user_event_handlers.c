@@ -301,7 +301,7 @@ void execute_trans(double ts, hash_node_t *src, hash_node_t *dest, unsigned shor
  * @param[in] timestamp: Time of the message
  * @param[in] creator: Source of the message
  */
-void execute_block(double ts, hash_node_t *src, hash_node_t *dest, unsigned short ttl, Block *b, float timestamp, unsigned int creator) {
+void execute_block(double ts, hash_node_t *src, hash_node_t *dest, unsigned short ttl, Block b, float timestamp, unsigned int creator) {
     BlockMsg     msg;
     unsigned int message_size;
 
@@ -411,13 +411,13 @@ void execute_link(double ts, hash_node_t *src, hash_node_t *dest) {
 /****************************************************************************
  *! \brief TRANS: Upon arrival of a transaction
  */
-void user_trans_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
+void user_trans_event_handler(hash_node_t *node, int forwarder, Msg msg) {
     // Statistics
     lp_total_received_trans++;
     #ifdef TRACE_DISSEMINATION
     float difference;
-    difference = simclock - msg->trans.trans_static.timestamp;
-    fprintf(fp_print_trace, "R %010u %010u %03u\n", node->data->key, msg->trans.trans_static.transid, (int)difference);
+    difference = simclock - msg.trans.trans_static.timestamp;
+    fprintf(fp_print_trace, "R %010u %010u %03u\n", node->data->key, msg.trans.trans_static.transid, (int)difference);
     #endif
 
     // Calling the appropriate LUNES user level handler
@@ -431,14 +431,14 @@ void user_trans_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
 /****************************************************************************
  *! \brief BLOCK: Upon arrival of an mined block
  */
-void user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
+void user_block_event_handler(hash_node_t *node, int forwarder, Msg msg) {
     // Statistics
     lp_total_received_blocks++;
 
     #ifdef TRACE_DISSEMINATION
     float difference;
-    difference = simclock - msg->block.block_static.timestamp;
-    fprintf(fp_print_trace, "R %010u %010u %03u\n", node->data->key, msg->block.block_static.transid, (int)difference);
+    difference = simclock - msg.block.block_static.timestamp;
+    fprintf(fp_print_trace, "R %010u %010u %03u\n", node->data->key, msg.block.block_static.transid, (int)difference);
     #endif
 
     // Calling the appropriate LUNES user level handler
@@ -448,14 +448,14 @@ void user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
 /****************************************************************************
  *! \brief ASKBLOCK: A peer asked for a specific update for a block ID
  */
-void user_askblock_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
+void user_askblock_event_handler(hash_node_t *node, int forwarder, Msg msg) {
     // Statistics
     lp_total_received_blocks++;
 
     #ifdef TRACE_DISSEMINATION
     float difference;
-    difference = simclock - msg->block.block_static.timestamp;
-    fprintf(fp_print_trace, "R %010u %010u %03u\n", node->data->key, msg->block.block_static.transid, (int)difference);
+    difference = simclock - msg.block.block_static.timestamp;
+    fprintf(fp_print_trace, "R %010u %010u %03u\n", node->data->key, msg.block.block_static.transid, (int)difference);
     #endif
 
     // Calling the appropriate LUNES user level handler
@@ -465,7 +465,7 @@ void user_askblock_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
 /****************************************************************************
  *! \brief LINK: upon arrival of a link request some tasks have to be executed
  */
-void user_link_event_handler(hash_node_t *node, int id, Msg *msg) {
+void user_link_event_handler(hash_node_t *node, int id, Msg msg) {
     value_element val;
 
     val.value = id;
@@ -522,7 +522,7 @@ void  user_notify_ext_migration_event_handler() {
  *         perform some user level tasks such as taking care of de-serializing the
  *         SE's local state
  */
-void user_migration_event_handler(hash_node_t *node, int id, Msg *msg) {
+void user_migration_event_handler(hash_node_t *node, int id, Msg msg) {
     // Initializing the local data structures of the node
     node->data->state = g_hash_table_new_full(g_int_hash, g_int_equal, g_free, NULL);
 
@@ -532,7 +532,7 @@ void user_migration_event_handler(hash_node_t *node, int id, Msg *msg) {
     //	information contained in the migration message
     //
     // Static part
-    node->data->s_state = msg->migr.migration_static.s_state;
+    node->data->s_state = msg.migr.migration_static.s_state;
 }
 
 /*****************************************************************************
@@ -586,16 +586,16 @@ void user_control_handler() {
  *         validation this generic handler is called. The specific user level
  *         handler will complete its processing
  */
-void user_model_events_handler(int to, int from, Msg *msg, hash_node_t *node) {
+void user_model_events_handler(int to, int from, Msg msg, hash_node_t *node) {
 
     // A model event has been received, now calling appropriate user level handler
 
     // If the node should perform a DOS attack: not a miner and is an attacker
     // Forward anything from the hardcoded node 337
-    switch (msg->type) {
+    switch (msg.type) {
     // A transaction message
     case 'T':
-       /* if (number_dos_nodes > 0 && node->data->attackerid == node->data->key && msg->trans.trans_static.creator == victim) {
+       /* if (number_dos_nodes > 0 && node->data->attackerid == node->data->key && msg.trans.trans_static.creator == victim) {
             break;
         }*/
         if (node->data->attackerid == 1 ){
@@ -609,9 +609,9 @@ void user_model_events_handler(int to, int from, Msg *msg, hash_node_t *node) {
         user_link_event_handler(node, from, msg);
         break;
 
-    // A mined block messaage
+    // A mined block message
     case 'B':
-        if (number_dos_nodes > 0 && node->data->attackerid == node->data->key && msg->block.block_static.creator == victim) {
+        if (number_dos_nodes > 0 && node->data->attackerid == node->data->key && msg.block.block_static.creator == victim) {
             break;
         }
         user_block_event_handler(node, from, msg);
@@ -619,14 +619,14 @@ void user_model_events_handler(int to, int from, Msg *msg, hash_node_t *node) {
 
     // A request for a block
     case 'A':
-        if (number_dos_nodes > 0 && node->data->attackerid == node->data->key && node->data->miner == 0 && msg->askblock.askblock_static.creator == victim) {
+        if (number_dos_nodes > 0 && node->data->attackerid == node->data->key && node->data->miner == 0 && msg.askblock.askblock_static.creator == victim) {
             break;
         }
         user_askblock_event_handler(node, from, msg);
         break;
 
     default:
-        fprintf(stdout, "FATAL ERROR, received an unknown user model event type: %d\n", msg->type);
+        fprintf(stdout, "FATAL ERROR, received an unknown user model event  type: %d\n", msg.type);
         fflush(stdout);
         exit(-1);
     }

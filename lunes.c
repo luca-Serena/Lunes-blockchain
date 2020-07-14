@@ -86,12 +86,12 @@ int actual_dos_nodes;
  *  @param[in] heads: array of pointer to head-blocks
  *  @param[in] id: id of the block to be found
  */
-int is_in_heads (Block ** heads , int id){
+int is_in_heads (Block heads [], int id){
 	int ret = -1;
 	for (int i =0; i<number_of_heads; i++){    
-        if (heads[i] != NULL /*&& sizeof(heads[i])==sizeof(Block *)*/){
+        if (heads[i].position != 0 /*&& sizeof(heads[i])==sizeof(Block *)*/){
          //   fprintf(stdout, "%s\n", heads[i]);               
-		    if (heads[i]->id == id){
+		    if (heads[i].id == id){
 		        ret = i;
 		      	break;
 		    }
@@ -110,7 +110,7 @@ int is_in_heads (Block ** heads , int id){
  *  @param[in] id: id whose index has to be found
  *  @param[in] latest: index of the latest element inserted in the blockchain
  */
-int getIndexById (Block* blockchain, int latest, int id){
+int getIndexById (Block blockchain [], int latest, int id){
 	int res = -1;
 	for (int i= latest; i >= 0; i--){                                     //starting from the latest index in the blockchain
     	if (blockchain[i].id == id){
@@ -123,7 +123,7 @@ int getIndexById (Block* blockchain, int latest, int id){
 
 
 // A new head block is declared.
-void replace_heads (Block ** heads, int old, Block * newBlock ){
+void replace_heads (Block heads [], int old, Block newBlock ){
     heads[old] = newBlock;
 }
 
@@ -135,12 +135,12 @@ void replace_heads (Block ** heads, int old, Block * newBlock ){
  *  @param[in] latest: index of the latest element inserted in the blockchain
  *  @param[in] position: looking for blocks whose position is >= than this int
  */
-tTuple find_block_given_position (Block* blockchain, int from, int latest, int position){
-	Block * given_block = NULL;
+tTuple find_block_given_position (Block blockchain [], int from, int latest, int position){
+	Block  given_block = { 0, 0 };
     int i;
     for (i= from; i <= latest; i++){
     	if (blockchain[i].position >= position){
-    		given_block = &blockchain[i];
+    		given_block = blockchain[i];
     		break;
     	}
     }
@@ -153,13 +153,13 @@ tTuple find_block_given_position (Block* blockchain, int from, int latest, int p
  *
  *  @param[in] heads: array of pointers to head-blocks
  */
-int heads_greater_position (Block ** heads){
+int heads_greater_position (Block heads []){
 	int max = -1;
 	int res = -1;
 	for (int i = 0; i<number_of_heads; i++){
-        if (heads[i] != NULL){
-            if (heads[i]->position > max && heads[i]->position > 0){
-        	   max = heads[i]->position;
+        if (heads[i].position > 0){
+            if (heads[i].position > max && heads[i].position > 0){
+        	   max = heads[i].position;
         	   res = i;
             }
         } 
@@ -176,7 +176,7 @@ int heads_greater_position (Block ** heads){
  *  @param[in] id: id whose index of the next block has to be found
  *  @param[in] latest: index of the latest element inserted in the blockchain
  */
-int is_next_in_blockchain (Block * blockchain, int latest, int id){
+int is_next_in_blockchain (Block  blockchain [], int latest, int id){
 	int ret = -1;
 	for (int i = 0; i < latest; i++){
 		if (blockchain[i].prevId == id){
@@ -193,10 +193,10 @@ int is_next_in_blockchain (Block * blockchain, int latest, int id){
  *  @param[in] heads: array of pointers to head-blocks
  *  @param[in] newBlock: candidate to become a new head-block
  */
-void add_heads (Block ** heads, Block * newBlock ){
+void add_heads (Block heads [], Block newBlock ){
 	int del = minimum_pos(heads);
-    if (heads[del] != NULL){
-	   if (heads[del]->position < newBlock->position){
+    if (del == 0){
+	   if (heads[del].position < newBlock.position){
     	   replace_heads(heads, del, newBlock);
         }
     }else{ 
@@ -207,17 +207,17 @@ void add_heads (Block ** heads, Block * newBlock ){
  *
  *  @param[in] heads: array of pointers to head-blocks
  */
-int minimum_pos (Block ** heads){
+int minimum_pos (Block heads []){
 	int	position = 0;
 	int	minimum = MAXINT;
 	int	tmp;
 
 	for (tmp = 0; tmp < number_of_heads; tmp++){
-        if (heads[tmp] == NULL){
+        if (heads[tmp].position == 0){
             return tmp;
         } else {
-		    if (heads[tmp]->position < minimum) {
-		      	minimum = heads[tmp]->position;
+		    if (heads[tmp].position < minimum) {
+		      	minimum = heads[tmp].position;
 			    position = tmp;
             }
 		}
@@ -230,7 +230,7 @@ int minimum_pos (Block ** heads){
  *  @param[in] id: id to find
  *  @param[in] latest: index of the latest element inserted in the blockchain
  */
-int is_in_blockchain (Block * blockchain, int id, int latest){
+int is_in_blockchain (Block blockchain [], int id, int latest){
 	int ret = -1;
 	for (int i =0; i < latest; i++){                   
 		if (blockchain[i].id == id){
@@ -288,7 +288,7 @@ void lunes_trans_insert(Block *b, int n, int from, int to, int id) {
  *  @param[in] id: ID of the transaction
  *  @return True or False
  */
-int lunes_trans_is_known(Block *b, int n, int id) {
+int lunes_trans_is_known(Block b, int n, int id) {
     int retvalue = 0;
     int tmp;
 
@@ -354,7 +354,7 @@ double lunes_degdependent_prob(unsigned int deg) {
  *  @param[in] creator: Node sender
  *  @param[in] forwarder: Agent forwarder
  */
-void lunes_real_forward(hash_node_t *node, Msg *msg, unsigned short ttl, float timestamp, unsigned int creator, unsigned int forwarder) {
+void lunes_real_forward(hash_node_t *node, Msg msg, unsigned short ttl, float timestamp, unsigned int creator, unsigned int forwarder) {
     // Iterator to scan the whole state hashtable of neighbors
     GHashTableIter iter;
     gpointer       key, destination;
@@ -362,7 +362,7 @@ void lunes_real_forward(hash_node_t *node, Msg *msg, unsigned short ttl, float t
     hash_node_t *  sender, *receiver; // Sender and receiver nodes in the global hashtable
     int            txid, from = 2, to = 1;
 
-    switch (msg->type) {
+    switch (msg.type) {
     // BlockMsg is always disseminated to all neighbors
     case 'B':
         g_hash_table_iter_init(&iter, node->data->state);
@@ -374,7 +374,7 @@ void lunes_real_forward(hash_node_t *node, Msg *msg, unsigned short ttl, float t
             // The original forwarder of this message and its creator are exclueded
             // from this dissemination
             if ((receiver->data->key != forwarder) && (receiver->data->key != creator)) {
-                execute_block(simclock + FLIGHT_TIME, sender, receiver, ttl, msg->block.block_static.minedblock, timestamp, creator);
+                execute_block(simclock + FLIGHT_TIME, sender, receiver, ttl, msg.block.block_static.minedblock, timestamp, creator);
             }
         }
         break;
@@ -397,7 +397,7 @@ void lunes_real_forward(hash_node_t *node, Msg *msg, unsigned short ttl, float t
                 // The original forwarder of this message and its creator are exclueded
                 // from this dissemination
                 if ((receiver->data->key != forwarder) && (receiver->data->key != creator)) {
-                    txid = msg->trans.trans_static.transid;
+                    txid = msg.trans.trans_static.transid;
                     execute_trans(simclock + FLIGHT_TIME, sender, receiver, ttl, txid, from, to, timestamp, creator);
                 }
             }
@@ -406,7 +406,7 @@ void lunes_real_forward(hash_node_t *node, Msg *msg, unsigned short ttl, float t
         case DANDELION:
         case DANDELIONPLUS:
             g_hash_table_iter_init (&iter, node->data->state);
-            txid = msg->trans.trans_static.transid;
+            txid = msg.trans.trans_static.transid;
             if (ttl >= env_dandelion_fluff_steps ){                   //stem phase
                 int neighbors = node->data->num_neighbors;
                 int selectedIndex = RND_Interval(S, 0, neighbors - 1);            //just sending the message to the neighbor of that index
@@ -451,7 +451,7 @@ void lunes_real_forward(hash_node_t *node, Msg *msg, unsigned short ttl, float t
                     // The original forwarder of this message and its creator are exclueded
                     // from this dissemination
                     if ((receiver->data->key != forwarder) && (receiver->data->key != creator)) {
-                        txid = msg->trans.trans_static.transid;
+                        txid = msg.trans.trans_static.transid;
                         execute_trans(simclock + FLIGHT_TIME, sender, receiver, ttl, txid, from, to, timestamp, creator);
                     }
                 }
@@ -482,14 +482,14 @@ void lunes_real_forward(hash_node_t *node, Msg *msg, unsigned short ttl, float t
                         // Note that, the startup phase (when the number of neighbors is not known) falls in
                         // this case (num_neighbors = 0)
                         // -> full dissemination
-                        txid = msg->trans.trans_static.transid;
+                        txid = msg.trans.trans_static.transid;
                         execute_trans(simclock + FLIGHT_TIME, sender, receiver, ttl, txid, from, to, timestamp, creator);
                     }
                     // Otherwise, the probability is evaluated according to the function defined by the
                     // environment variable env_probability_function
                     else{
                         if (threshold <= lunes_degdependent_prob(((value_element *)destination)->num_neighbors)) {
-                            txid = msg->trans.trans_static.transid;
+                            txid = msg.trans.trans_static.transid;
                             execute_trans(simclock + FLIGHT_TIME, sender, receiver, ttl, txid, from, to, timestamp, creator);
                         }
                     }
@@ -525,7 +525,7 @@ void lunes_real_forward(hash_node_t *node, Msg *msg, unsigned short ttl, float t
  *  @param[in] creator: Node sender
  *  @param[in] forwarder: Agent forwarder
  */
-void lunes_forward_to_neighbors(hash_node_t *node, Msg *msg, unsigned short ttl, float timestamp, unsigned int creator, unsigned int forwarder) {
+void lunes_forward_to_neighbors(hash_node_t *node, Msg msg, unsigned short ttl, float timestamp, unsigned int creator, unsigned int forwarder) {
     float threshold; // Tmp, probabilistic evaluation
 
     // Dissemination mode for the forwarded messages
@@ -590,7 +590,7 @@ void lunes_send_trans_to_neighbors(hash_node_t *node, int txid, int from, int to
  * @param[in] node: The node doing the sending
  * @param[in] b: Block to forward
  */
-void lunes_send_block_to_neighbors(hash_node_t *node, Block *b) {
+void lunes_send_block_to_neighbors(hash_node_t *node, Block b) {
     // Iterator to scan the whole state hashtable of neighbors
     GHashTableIter iter;
     gpointer       key, destination;
@@ -602,6 +602,7 @@ void lunes_send_block_to_neighbors(hash_node_t *node, Block *b) {
         // It's a standard trans message
         execute_block(simclock + FLIGHT_TIME, hash_lookup(stable, node->data->key), hash_lookup(table, *(unsigned int *)destination), env_max_ttl, b, simclock, node->data->key);
     }
+    //fprintf(stdout, "ACCA %d\n", b.id);
 }
 
 /*! \brief Dissemination protocol implementation for mined blocks.
@@ -612,7 +613,7 @@ void lunes_send_block_to_neighbors(hash_node_t *node, Block *b) {
  * @param[in] b: Blockchain pointer
  * @param[in] dest: Node recipient
  */
-void lunes_responde_ask_block(hash_node_t *node, Block *b, int dest) {
+void lunes_responde_ask_block(hash_node_t *node, Block b, int dest) {
     BlockMsg     msg;
     unsigned int message_size;
 
@@ -765,6 +766,7 @@ void lunes_user_control_handler(hash_node_t *node) {
 	    }
 	    node->data->num_neighbors = count;
     }
+
     if ((int) simclock % INTERMEDIATE_STEPS == 0) {
 	    int ltblock = node->data->latestblock;    //index of latest block
 
@@ -775,20 +777,20 @@ void lunes_user_control_handler(hash_node_t *node) {
 	        // Avoid luck
 	        if (p > random_mine && node->data->internal_timer > 2) {
 	        	#ifdef FORKING
-                Block *b = &node->data->s_state.blockchain[ltblock];
+                Block b = node->data->s_state.blockchain[ltblock];
 	            int newId = RND_Interval(S, 0, MAXINT - 1);
 		        if (ltblock < 2500 - 1){    //with rispect to the non-forking version the blockchain size is increased, due to foking version producing more blocks
-		            b->id = newId;
+		            b.id = newId;
 		            int headPos= heads_greater_position(node->data->s_state.heads);   //we want to continue the longest chain so we get its head block
 		            if ( headPos >= 0){                                               //adding the block to the longest chain
-                        Block **  heads= node->data->s_state.heads;                   //array of pointers to head-blocks
-                        Block * thatBlock = heads[headPos];                           //head block of the longest chain
-		               	b->prevId = thatBlock->id;                                    //continuing the longest chain
-		               	b->position = thatBlock->position + 1;                        //position = position of the previous node + 1
-		               	replace_heads (node->data->s_state.heads, headPos, b);        //update the main chain. The head is now the new mined node
+                        Block *  heads  = node->data->s_state.heads;                 //array of pointers to head-blocks
+                        Block thatBlock = heads[headPos];                           //head block of the longest chain
+		               	b.prevId = thatBlock.id;                                    //continuing the longest chain
+		               	b.position = thatBlock.position + 1;                        //position = position of the previous node + 1
+		               	replace_heads (node->data->s_state.heads, headPos, b);      //update the main chain. The head is now the new mined node
 		            } else {                //in case still no chain exists
-		            	b->prevId = -1;                                               //first block of a chain has -1 as previous block index 
-                        b-> position = 1;                                             //and 1 as position             
+		            	b.prevId = -1;                                               //first block of a chain has -1 as previous block index 
+                        b.position = 1;                                             //and 1 as position             
 		                replace_heads (node->data->s_state.heads, 0, b);              //new block now replaces its previous block as head-block
 		            }
 		            node->data->latestblock += 1;                                     //number of blocks memorized in the blockchain increased by 1
@@ -806,13 +808,10 @@ void lunes_user_control_handler(hash_node_t *node) {
 	            node->data->internal_timer = 0;
 	            if (node->data->attackerid == node->data->key && selfish[2] >= 0) {
 	                // clock - nodeid - blockminedid - hashrate
-	                #ifdef FORKING   
 	                //underscore characted added in order to facilitate the recognition of the IDs
-	                fprintf(stdout, "BS: %.0f,%d,_%d,%d,%f,%d\n", simclock, node->data->key, b->id, b->prevId, node->data->hashrate, b-> position);
+	                fprintf(stdout, "BS: %.0f,%d,_%d,%d,%f,%d\n", simclock, node->data->key, b.id, b.prevId, node->data->hashrate, b.position);
 	                //fprintf(stdout, "BSS: %.0f,%d,%d,%d,%f\n", simclock, node->data->key, b->id, b->position, node->data->hashrate);
-	                #else
-	                fprintf(stdout, "BSS: %.0f,%d,%d,%f\n", simclock, node->data->key, ltblock, node->data->hashrate);
-	                #endif
+
 	                // Update private chain
 	                #ifdef FORKING
 	                selfish[0] = newId;
@@ -824,10 +823,10 @@ void lunes_user_control_handler(hash_node_t *node) {
 	                                                    //Head block and his previous block are spread through the network. 
 	                    #ifdef FORKING                  //in FORKING mode the indexes in the blockchain have to be found
 	                    fprintf(stdout, "possible selfish successful %d %d %d\n", selfish[0], selfish[1], selfish[2]);
-	                    int ind = getIndexById (&node->data->s_state.blockchain[0], node->data->latestblock, newId);
-	                    int prev = getIndexById (&node->data->s_state.blockchain[0], node->data->latestblock, node->data->s_state.blockchain[ind].prevId);
-	                    lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[prev]);
-	                    lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[ind]);
+	                    int ind = getIndexById (node->data->s_state.blockchain, node->data->latestblock, newId);
+	                    int prev = getIndexById (node->data->s_state.blockchain, node->data->latestblock, node->data->s_state.blockchain[ind].prevId);
+	                    lunes_send_block_to_neighbors(node, node->data->s_state.blockchain[prev]);
+	                    lunes_send_block_to_neighbors(node, node->data->s_state.blockchain[ind]);
 	                    #else
 	                    fprintf(stdout, "possible selfish successful %d %d %d\n", selfish[0], selfish[1], selfish[2]);
 	                    lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[ltblock - 1]);
@@ -838,13 +837,9 @@ void lunes_user_control_handler(hash_node_t *node) {
 	                }
 	            }else {
 	                // Broadcasting the mined ("old") block to all neighbors
-                    lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[ltblock]);
+                    lunes_send_block_to_neighbors(node, b);
 	                // clock - nodeid - blockminedid - hashrate
-	                #ifdef FORKING
-	                fprintf(stdout, "BS: %.0f,%d,_%d,%d,%f,%d\n", simclock, node->data->key, newId, b->prevId, node->data->hashrate, b-> position);
-	                #else
-	                fprintf(stdout, "BS: %.0f,%d,%d,%f\n", simclock, node->data->key, ltblock, node->data->hashrate);
-	                #endif
+	                fprintf(stdout, "BS: %.0f,%d,_%d,%d,%f,%d\n", simclock, node->data->key, b.id, b.prevId, node->data->hashrate, b.position);
 	            }
 	            fflush(stdout);
 	        }else {
@@ -939,30 +934,30 @@ void lunes_user_register_event_handler(hash_node_t *node) {
  * @param[in] node: The node receiving the TransMsg
  * @param[in] msg: The TransMsg
  */
-void lunes_user_trans_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
+void lunes_user_trans_event_handler(hash_node_t *node, int forwarder, Msg msg) {
     #ifdef TXDEBUG
     // Time-To-Live check
-    if (msg->trans.trans_static.ttl > 0) {
+    if (msg.trans.trans_static.ttl > 0) {
         // The TTL is still OK
         // Is this node a free-rider?
         if (node->data->s_state.freerider == 0) {
             // Verify the transaction is not known
-            if (node->data->key != msg->trans.trans_static.creator &&
-                lunes_trans_is_known(node->data->s_state.blockchain, node->data->latestblock, msg->trans.trans_static.transid) == 0) {
+            if (node->data->key != msg.trans.trans_static.creator &&
+                lunes_trans_is_known(node->data->s_state.blockchain, node->data->latestblock, msg.trans.trans_static.transid) == 0) {
                 // It has not been received
                 lunes_trans_insert(node->data->s_state.blockchain,
                                    node->data->latestblock,
                                    2,
                                    1,
-                                   msg->trans.trans_static.transid);
+                                   msg.trans.trans_static.transid);
 
                 // clock - nodeid - originalcreartor - timestamp - txid - from - to - blockid
                 fprintf(stdout, "TR: %.0f,%d,%d,%.0f,%d,%d,%d,%d\n",
                         simclock,
                         node->data->key,
-                        msg->trans.trans_static.creator,
-                        msg->trans.trans_static.timestamp,
-                        msg->trans.trans_static.transid,
+                        msg.trans.trans_static.creator,
+                        msg.trans.trans_static.timestamp,
+                        msg.trans.trans_static.transid,
                         2,
                         1,
                         node->data->latestblock);
@@ -975,16 +970,16 @@ void lunes_user_trans_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
 
                 // Updating the number of neighbors of forwarder's neighbors
                 neighbor = g_hash_table_lookup(node->data->state, &forwarder);
-                ((value_element *)neighbor)->num_neighbors = msg->trans.trans_static.num_neighbors;
+                ((value_element *)neighbor)->num_neighbors = msg.trans.trans_static.num_neighbors;
                 #endif
 
                 // Dissemination (to some of) the neighbors
                 // NOTE: the TTL is being decremented here!
                 lunes_forward_to_neighbors(node,
                                            msg,
-                                           --(msg->trans.trans_static.ttl),
-                                           msg->trans.trans_static.timestamp,
-                                           msg->trans.trans_static.creator,
+                                           --(msg.trans.trans_static.ttl),
+                                           msg.trans.trans_static.timestamp,
+                                           msg.trans.trans_static.creator,
                                            forwarder);
             }else {
                 // The message is already in the block
@@ -992,9 +987,9 @@ void lunes_user_trans_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
                 // clock - nodeid - originalcreartor - timestamp - txid, from, to
                 fprintf(stdout, "TRS: %.0f,%d,%d,%.0f,%d,%d,%d\n",
                         simclock, node->data->key,
-                        msg->block.block_static.creator,
-                        msg->block.block_static.timestamp,
-                        msg->trans.trans_static.transid,
+                        msg.block.block_static.creator,
+                        msg.block.block_static.timestamp,
+                        msg.trans.trans_static.transid,
                         2, 1);
                 fflush(stdout);
                 #endif
@@ -1002,7 +997,7 @@ void lunes_user_trans_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
         }else {
             // This node is a free-rider (i.e. no cache management, no forwarding)
             #ifdef FREERIDINGDEBUG
-            fprintf(stdout, "%12.2f node: [%5d] message [%5d] dropped for freeriding\n", simclock, node->data->key, msg->trans.trans_static.transid);
+            fprintf(stdout, "%12.2f node: [%5d] message [%5d] dropped for freeriding\n", simclock, node->data->key, msg.trans.trans_static.transid);
             #endif
         }
     }
@@ -1015,14 +1010,14 @@ void lunes_user_trans_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
  * @param[in] node: The node receiving the BlockMsg
  * @param[in] msg: The BlockMsg
  */
-void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
+void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg msg) {
     // Time-To-Live check
-    if (msg->block.block_static.ttl > 0) {
+    if (msg.block.block_static.ttl > 0) {
         // The TTL is still OK
         // Is this node a free-rider?
         if (node->data->s_state.freerider == 0) {
             int ltblock         = node->data->latestblock;
-            int receivedblockid = msg->block.block_static.minedblock->id;
+            int receivedblockid = msg.block.block_static.minedblock.id;
             // If the attacker receive a block present in his private blockchain empty the buffer
             // and sent all blocks
             if (node->data->attackerid == node->data->key && selfish[2] >= 0) {
@@ -1031,8 +1026,7 @@ void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
                 // selfish[1] = latest received block from the network for the attacker
                 // selfish[2] = status of the attack (-1 = disabled, 0 active and even with the blockchain, 1
                 //              attacker is 1 block ahead, 3 attacker sent the mined block
-            	#ifdef FORKING
-            	int pos = msg->block.block_static.minedblock->position;
+            	int pos = msg.block.block_static.minedblock.position;
             	int selfish_0_ind = getIndexById(&node->data->s_state.blockchain[0], node->data->latestblock, selfish[0]); 
             	int selfish_1_ind = getIndexById(&node->data->s_state.blockchain[0], node->data->latestblock, selfish[1]);
             	int selfish_0_pos = selfish_0_ind == -1 ? 0 :
@@ -1045,63 +1039,30 @@ void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
                 if (diff_prev >= 0) {                                                               //zero blocks in advantage
                     selfish[2] = diff_prev;                                                                 
                 } 
-                /*if (diff_prev == 1) {                                                        //just one block in advantage, risk of spoiling mining effort, propagate the block
-                	int previousId = node->data->s_state.blockchain[selfish_0_ind].prevId;          
-                	int previousIndex = getIndexById (&node->data->s_state.blockchain[0], node->data->latestblock, previousId);
-                	lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[previousIndex]);
-                	fprintf(stdout, "BSS: %.0f,%d,%d,%d,%f\n", simclock, node->data->key, node->data->s_state.blockchain[selfish_0_ind].prevId, node->data->s_state.blockchain[selfish_0_ind].position - 1, node->data->hashrate);
-                	lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[selfish_0_ind]);
-                	fprintf(stdout, "BSS: %.0f,%d,%d,%d,%f\n", simclock, node->data->key, node->data->s_state.blockchain[selfish_0_ind].id, node->data->s_state.blockchain[selfish_0_ind].position, node->data->hashrate);                   
-                    selfish[2] = 0;
-                }*/
-            	#else
-                int diff_prev = selfish[0] - receivedblockid;
-                selfish[1] = receivedblockid;
-                if (diff_prev == 0) {
-                    selfish[0] = receivedblockid;
-                    selfish[2] = 0;
-                }else if (diff_prev == 1) {
-                    lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[selfish[0]]);
-                    // clock - nodeid - blockminedid - hashrate
-                    fprintf(stdout, "BSS: %.0f,%d,%d,%f\n", simclock, node->data->key, selfish[0], node->data->hashrate);
-                }else if (diff_prev == 2) {
-                    for (int b = selfish[0]; b >= 0; --b) {
-                        // Broadcasting the mined old blocks to all neighbors
-                        lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[selfish[0] - b]);
-                        // clock - nodeid - blockminedid - hashrate
-                        fprintf(stdout, "BSS: %.0f,%d,%d,%f\n", simclock, node->data->key, selfish[0] - b, node->data->hashrate);
-                    }
-                    selfish[2] = 0;
-                }else if (selfish[0] >= 0) {
-                    int first_unp_block = selfish[0] - selfish[2];
-                    lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[first_unp_block]);
-                    // clock - nodeid - blockminedid - hashrate
-                    fprintf(stdout, "BSS: %.0f,%d,%d,%f\n", simclock, node->data->key, first_unp_block, node->data->hashrate);
-                }
-                #endif
             }
 
-            #ifdef FORKING
           //  if (node->data->key !=40 || simclock < 200 || simclock > 400){  //to test if a node, (node with id =40 in this case) can easily 
          //                                                    recover previous block is disconnected from the network for 200 time steps
-            Block * receivedBlock = msg->block.block_static.minedblock;
-            if (is_in_blockchain(&node->data->s_state.blockchain[0], receivedBlock->id, ltblock) == -1){  //if it's a new block
-	            Block ** heads = node->data->s_state.heads;
-	            int prevId =  receivedBlock->prevId;
-	            if (receivedBlock->position == 1){                                         //if it's the first block in the chain
+
+            Block receivedBlock = msg.block.block_static.minedblock;
+
+            if (is_in_blockchain(node->data->s_state.blockchain, receivedBlock.id, ltblock) == -1){  //if it's a new block
+	            Block * heads = node->data->s_state.heads;
+	            int prevId =  receivedBlock.prevId;
+	            if (receivedBlock.position == 1){                                         //if it's the first block in the chain
                     add_heads(node->data->s_state.heads, receivedBlock);        	       //added to head-blocks
 	            } else {
 	            	int pos = is_in_heads (heads, prevId);                                 //!= 1 means the block of given id is among head-blocks
 	            	if (pos != -1){                                                        //if previous block is a head block
 	            		replace_heads (heads, pos, receivedBlock);                         // new block replaces his previous among head-blocks
 	            	} else {                                                               //if the previous block not a head block           	    
-	            	    if (is_in_blockchain(&node->data->s_state.blockchain[0], prevId, ltblock)!= -1)	{   //if previous block is not a head block but it's in the blockchain
-	            		    int next = is_next_in_blockchain(&node->data->s_state.blockchain[0], node->data->latestblock, receivedBlock->id);  //Try to find the following of the received block
+	            	    if (is_in_blockchain(node->data->s_state.blockchain, prevId, ltblock)!= -1)	{   //if previous block is not a head block but it's in the blockchain
+	            		    int next = is_next_in_blockchain(node->data->s_state.blockchain, node->data->latestblock, receivedBlock.id);  //Try to find the following of the received block
 	            		    while (next != -1){                                            //try to find, if any, the last descendant
-                                next = is_next_in_blockchain(&node->data->s_state.blockchain[0], node->data->latestblock, node->data->s_state.blockchain[next].id);
+                                next = is_next_in_blockchain(node->data->s_state.blockchain, node->data->latestblock, node->data->s_state.blockchain[next].id);
 	            		    }
 	            		    if (next != -1){                                                //if the next block exists put the lastest of the chain as a head-block
-	            		    	add_heads (heads, &node->data->s_state.blockchain[next]);
+	            		    	add_heads (heads, node->data->s_state.blockchain[next]);
 	            		    } else {                                                        // if the next block doesn't exist put the block as a head-block
 	            		    add_heads (heads, receivedBlock);
                             }
@@ -1110,10 +1071,10 @@ void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
                                                                                             //and the position of the longest head-block
                             int positionToAsk = 1;
                             if (heads_greater_position(heads) != -1){                       
-                                positionToAsk = heads[heads_greater_position(heads)]->position + 1; //position of the longest head-block
+                                positionToAsk = heads[heads_greater_position(heads)].position + 1; //position of the longest head-block
                             }
-	            	    	if (receivedBlock->position - 1 < positionToAsk ){   
-	                            positionToAsk = receivedBlock->position == 1 ? 1 : receivedBlock->position -1;  //you will ask for all blocks with position >=positionToAsk
+	            	    	if (receivedBlock.position - 1 < positionToAsk ){   
+	                            positionToAsk = receivedBlock.position == 1 ? 1 : receivedBlock.position -1;  //you will ask for all blocks with position >=positionToAsk
 	            	    	}
 			        	    GHashTableIter iter;
 			                gpointer       key, destination;
@@ -1124,7 +1085,7 @@ void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
 			                	float threshold = RND_Interval(S, (double)0, (double)100);
 			                    sender   = hash_lookup(stable, node->data->key);             // This node
 			                    receiver = hash_lookup(table, *(unsigned int *)destination); // The neighbor
-			                    if (threshold > 50){         // not sending the ask message to all the neighbors, in order to avoid useless messages
+			                    if (threshold > 50){        // not sending the ask message to all the neighbors, in order to avoid useless messages
 				                    execute_ask_block(simclock + FLIGHT_TIME,
 				                                      sender,
 				                                      receiver,
@@ -1142,106 +1103,29 @@ void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
 	            	    }
 	            	}
 	            }
-	            node->data->s_state.blockchain[ltblock] =  *msg->block.block_static.minedblock;
+	            node->data->s_state.blockchain[ltblock] =  msg.block.block_static.minedblock;
 	            node->data->latestblock += 1;
 
 	            fprintf(stdout, "BR: %.0f,%d,%d,%.0f,%d,%d\n",
 		                simclock, 
 		                node->data->key,
-		                msg->block.block_static.creator,
-		                msg->block.block_static.timestamp,
+		                msg.block.block_static.creator,
+		                msg.block.block_static.timestamp,
 		                receivedblockid,
-		                msg->block.block_static.minedblock->position);
+		                msg.block.block_static.minedblock.position);
 
 	            lunes_forward_to_neighbors(node,
 	                                       msg,
-	                                       --(msg->block.block_static.ttl),
-	                                       msg->block.block_static.timestamp,
-	                                       msg->block.block_static.creator,
+	                                       --(msg.block.block_static.ttl),
+	                                       msg.block.block_static.timestamp,
+	                                       msg.block.block_static.creator,
 	                                       forwarder);
             }//}
-            #else
-            // If the received block is the next one in the local blockchain add it
-            if (ltblock == receivedblockid) {  
-                // clock - nodeid - originalcreartor - timestamp - blockid
- 
-                fprintf(stdout, "BR: %.0f,%d,%d,%.0f,%d,%d\n",
-                        simclock,
-                        node->data->key,
-                        msg->block.block_static.creator,
-                        msg->block.block_static.timestamp,
-                        receivedblockid);
-                node->data->s_state.blockchain[ltblock].id = ltblock;
-
-                // It has not been received, increment latestblock and add all transactions
-                node->data->internal_timer = 0;
-           
-                // (add the block to the blockchain)
-                node->data->latestblock += 1;
-                // store only the pointer to reduce RAM usage
-                node->data->s_state.blockchain[ltblock] = *msg->block.block_static.minedblock;
-                #ifdef TXDEBUG
-                //for (int b = 0; b < msg->block.block_static.minedblock->latesttrans; ++b) {
-                //    node->data->s_state.blockchain[ltblock].trans[b].id   = msg->block.block_static.minedblock->trans[b].id;
-                //    node->data->s_state.blockchain[ltblock].trans[b].from = msg->block.block_static.minedblock->trans[b].from;
-                //    node->data->s_state.blockchain[ltblock].trans[b].to   = msg->block.block_static.minedblock->trans[b].to;
-                //}
-                #endif
-
-                // Dissemination (to some of) the neighbors
-                // NOTE: the TTL is being decremented here!
-                lunes_forward_to_neighbors(node,
-                                           msg,
-                                           --(msg->block.block_static.ttl),
-                                           msg->block.block_static.timestamp,
-                                           msg->block.block_static.creator,
-                                           forwarder);
-            }else {
-                // If the node's blockchain is not updated ask the neighbors for the current blocks
-                // If the node is mining the ltblock and the message is for ltblock + 1 we need to
-                // ask for the ltblock
-                if (msg->block.block_static.minedblock->id > node->data->latestblock) {
-                    GHashTableIter iter;
-                    gpointer       key, destination;
-                    hash_node_t *  sender, *receiver; // Sender and receiver nodes in the global hashtable
-
-                    g_hash_table_iter_init(&iter, node->data->state);
-                    while (g_hash_table_iter_next(&iter, &key, &destination)) {
-                        sender   = hash_lookup(stable, node->data->key);             // This node
-                        receiver = hash_lookup(table, *(unsigned int *)destination); // The neighbor
-                        execute_ask_block(simclock + FLIGHT_TIME,
-                                          sender,
-                                          receiver,
-                                          env_max_ttl,
-                                          node->data->latestblock,
-                                          simclock + FLIGHT_TIME,
-                                          node->data->key);
-                    }
-
-                    #ifdef ASKBLOCKDEBUG
-                    // clock - nodeid - blockid
-                    fprintf(stdout, "ABS: %.0f,%d,%d\n", simclock, node->data->key, node->data->latestblock);
-                    #endif
-                }
-
-                #ifdef STALEBLOCKDEBUG
-                // Block is stale
-                // clock - nodeid - originalcreartor - timestamp - blockid - latestblock
-                fprintf(stdout, "BRS: %.0f,%d,%d,%.0f,%d,%d\n",
-                        simclock, node->data->key,
-                        msg->block.block_static.creator,
-                        msg->block.block_static.timestamp,
-                        msg->block.block_static.minedblock->id,
-                        node->data->latestblock);
-                fflush(stdout);
-                #endif
-                
-            }
-            #endif
+            
         }else {
             // This node is a free-rider (i.e. no cache management, no forwarding)
             #ifdef FREERIDINGDEBUG
-            fprintf(stdout, "%12.2f node: [%5d] message [%5d] dropped for freeriding\n", simclock, node->data->key, msg->block.block_static.minedblock.id);
+            fprintf(stdout, "%12.2f node: [%5d] message [%5d] dropped for freeriding\n", simclock, node->data->key, msg.block.block_static.minedblock.id);
             #endif
         }
     }
@@ -1253,31 +1137,23 @@ void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
  * @param[in] node: The node receiving the AskMsg
  * @param[in] msg: The AskMsg
  */
-void lunes_user_askblock_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
+void lunes_user_askblock_event_handler(hash_node_t *node, int forwarder, Msg msg) {
     // Time-To-Live check
-    if (msg->block.block_static.ttl > 0) {
+    if (msg.block.block_static.ttl > 0) {
         // The TTL is still OK
         // If the received block is in the local blockchain send it
-      
-        #ifdef FORKING
         int still=1;                                                        //boolean. 1 if there are still blocks to ask for
         int from =0;                                                        //index where starting to search for a block of a given position
         while (still == 1){                                                 
-	        tTuple tuple = find_block_given_position (&node->data->s_state.blockchain[0], from, node->data->latestblock, msg->askblock.askblock_static.blockid );  //msg.blockid actually stays for position
-	        Block * b = tuple.block;
-	        if (b != NULL){
+	        tTuple tuple = find_block_given_position (&node->data->s_state.blockchain[0], from, node->data->latestblock, msg.askblock.askblock_static.blockid );  //msg.blockid actually stays for position
+	        Block b = tuple.block;
+	        if (b.position == 0){
                 from = tuple.from + 1;                                       //blocks with smaller indexes ignored
-	            lunes_responde_ask_block(node, b, msg->askblock.askblock_static.creator);
+	            lunes_responde_ask_block(node, b, msg.askblock.askblock_static.creator);
 	        } else {                                                         // no more blocks to ask
               still = 0;
 	        }
 	    }
-        #else
-
-        if (node->data->latestblock > msg->askblock.askblock_static.blockid && node->data->attackerid == node->data->key) {
-            lunes_responde_ask_block(node, &node->data->s_state.blockchain[msg->askblock.askblock_static.blockid], msg->askblock.askblock_static.creator);
-        }
-        #endif
     }
 }
 
@@ -1313,12 +1189,12 @@ void lunes_dos_user_control_handler(hash_node_t *node) {
                 msg.trans_static.ttl       = env_max_ttl;
               //  msg.trans_static.transid   = RND_Interval(S, 0, MAXINT - 1);
                 msg.trans_static.creator   = node->data->key;
-                lunes_forward_to_neighbors(node,
-                                               &msg,
+           /*     lunes_forward_to_neighbors(node,
+                                               msg,
                                                --(msg.trans_static.ttl),
                                                msg.trans_static.timestamp,
                                                msg.trans_static.creator,
-                                               node->data->key);
+                                               node->data->key);*/
             }
             node->data->s_state.received = simclock;
         }
@@ -1343,38 +1219,38 @@ void lunes_dos_user_control_handler(hash_node_t *node) {
             msg.trans_static.ttl       = env_dandelion_fluff_steps -1;               //just go to the fluff phase, broadcast the transaction
           //  msg.trans_static.transid   = RND_Interval(S, 0, MAXINT - 1);
             msg.trans_static.creator   = victim;
-            lunes_forward_to_neighbors(node,
-                                           &msg,
+           /* lunes_forward_to_neighbors(node,
+                                           msg,
                                            --(msg.trans_static.ttl),
                                            msg.trans_static.timestamp,
                                            msg.trans_static.creator,
-                                           node->data->key);
+                                           node->data->key);*/
             //lunes_send_trans_to_neighbors(node, 0,0,0);
             node->data->s_state.received = -1;
     }
 }
 
-void lunes_dos_user_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
+void lunes_dos_user_event_handler(hash_node_t *node, int forwarder, Msg msg) {
     // Time-To-Live check
-    if (msg->trans.trans_static.ttl > 0 ) {
+    if (msg.trans.trans_static.ttl > 0 ) {
         if (node->data->s_state.received == 0) {                            //still didn't receive anything and it's not an attacker nor the creator
-            if (msg->trans.trans_static.ttl >= env_dandelion_fluff_steps){   //if we're in the stem phase
+            if (msg.trans.trans_static.ttl >= env_dandelion_fluff_steps){   //if we're in the stem phase
                 node->data->s_state.received = simclock;                    //information needed for dandelion++ fail-safe mechanism
             } else {                                                        //we're in the fluff phase, nothing more to be done in this epoch
                 node->data->s_state.received = -1;
             }
 
-            fprintf(stdout, "TR: %.0f,%d, %d\n", simclock, node->data->key, msg->trans.trans_static.ttl);
+            fprintf(stdout, "TR: %.0f,%d, %d\n", simclock, node->data->key, msg.trans.trans_static.ttl);
             if ((int)simclock % env_max_ttl != env_max_ttl - 1){            //epoch is not over
                 lunes_forward_to_neighbors(node,
                                             msg,
-                                            --(msg->trans.trans_static.ttl),
-                                            msg->trans.trans_static.timestamp,
-                                            msg->trans.trans_static.creator,
+                                            --(msg.trans.trans_static.ttl),
+                                            msg.trans.trans_static.timestamp,
+                                            msg.trans.trans_static.creator,
                                             node->data->key);
             }
         }
-        else if (msg->trans.trans_static.ttl < env_dandelion_fluff_steps){   //received it back during the fluff phase, work done
+        else if (msg.trans.trans_static.ttl < env_dandelion_fluff_steps){   //received it back during the fluff phase, work done
             node->data->s_state.received = -1;
         }
         //if the creator receives back the transaction during the stem phase, then it still relays it
@@ -1383,9 +1259,9 @@ void lunes_dos_user_event_handler(hash_node_t *node, int forwarder, Msg *msg) {
                 (int)simclock % env_max_ttl != env_max_ttl - 1){
                 lunes_forward_to_neighbors(node,
                                            msg,
-                                           --(msg->trans.trans_static.ttl),
-                                           msg->trans.trans_static.timestamp,
-                                           msg->trans.trans_static.creator,
+                                           --(msg.trans.trans_static.ttl),
+                                           msg.trans.trans_static.timestamp,
+                                           msg.trans.trans_static.creator,
                                            node->data->key);
                 node->data->s_state.received = simclock;
         }

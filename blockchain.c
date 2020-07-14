@@ -46,7 +46,7 @@ double step,                  // Size of each timestep (expressed in time-units)
 static int end_reached = 0;   // Control variable, false if the run is not finished
 
 // A single LP is responsible to show the runtime statistics
-//	by default the first started LP is responsible for this task
+//  by default the first started LP is responsible for this task
 static int LP_STAT = 0;
 
 // Seed used for the random generator
@@ -54,8 +54,8 @@ TSeed Seed, *S = &Seed;
 /*---------------------------------------------------------------------------*/
 
 // File descriptors:
-//	lcr_fp: (output) -> local communication ratio evaluation
-//	finished: (output) -> it is created when the run is finished (used for scripts management)
+//  lcr_fp: (output) -> local communication ratio evaluation
+//  finished: (output) -> it is created when the run is finished (used for scripts management)
 //
 FILE *lcr_fp, *finished_fp;
 
@@ -85,7 +85,7 @@ int    env_miners_count;                      /* Number of miners for this curre
 int victim = -1;                              /* ID of the victim node. It's incremented each epoch*/
 #endif
 /* ************************************************************************ */
-/*                      Hash Tables		                                    */
+/*                      Hash Tables                                         */
 /* ************************************************************************ */
 
 hash_t hash_table, *table = &hash_table; /* Global hash table, contains ALL the simulated entities */
@@ -93,11 +93,11 @@ hash_t sim_table, *stable = &sim_table;  /* Local hash table, contains only the 
 /*---------------------------------------------------------------------------*/
 
 /* ************************************************************************ */
-/*             Migrating Objects List			                            */
+/*             Migrating Objects List                                       */
 /* ************************************************************************ */
 
 // List containing the objects (SE) that have to migrate at the end of the
-//	current timestep
+//  current timestep
 static se_list migr_list,
                *mlist = &migr_list;
 /*---------------------------------------------------------------------------*/
@@ -130,8 +130,8 @@ static void Generate(int count) {
         GAIA_Register(MIGRABLE);
 
         // NOTE: the internal state of entities is initialized in the
-        //		register_event_handler()
-        //		see in the following of this source file
+        //      register_event_handler()
+        //      see in the following of this source file
     }
 }
 
@@ -159,8 +159,8 @@ static int UNUSED ScanMigrating() {
 
 
     // The SEs to migrate have been already identified by GAIA
-    //	and placed in the migration list (mlist) when the
-    //	related NOTIF_MIGR was received
+    //  and placed in the migration list (mlist) when the
+    //  related NOTIF_MIGR was received
     while ((se = list_del(mlist))) {
         // Statistics
         migrated_in_this_step++;
@@ -169,11 +169,11 @@ static int UNUSED ScanMigrating() {
         m.migration_static.type = 'M';
 
         // The state of each IA is composed of a set of elements
-        //	let's start from the first one
+        //  let's start from the first one
         state_position = 0;
 
         // The static part of the agents state has to be inserted in
-        //	the migration message
+        //  the migration message
         m.migration_static.s_state = se->data->s_state;
 
         // Dynamic part of the agents state
@@ -187,8 +187,8 @@ static int UNUSED ScanMigrating() {
         }
 
         // Copying the local state of the migrating entity in the payload of the migration message
-        //	for each record in the entity state a new record is appended in the dynamic part
-        //	of the migration message
+        //  for each record in the entity state a new record is appended in the dynamic part
+        //  of the migration message
         if (se->data->state != NULL) {
             #ifdef DEBUG
             int tmp = 0;
@@ -242,7 +242,7 @@ static int UNUSED ScanMigrating() {
 /*---------------------------------------------------------------------------*/
 
 /* ************************************************************************ */
-/*           E V E N T   H A N D L E R S			                        */
+/*           E V E N T   H A N D L E R S                                    */
 /* ************************************************************************ */
 
 /*! \brief Upon arrival of a model level event, firstly we have to validate it
@@ -269,12 +269,12 @@ static void register_event_handler(int id, int lp) {
     hash_node_t *node;
 
     // In every case the new node has to be inserted in the global hash table
-    //	containing all the Simulated Entities
+    //  containing all the Simulated Entities
     node = hash_insert(GSE, table, NULL, id, lp);
     if (node) {
         node->data->s_state.changed = YES;
         // If the SMH is local then it has to be inserted also in the local
-        //	hashtable and some extra management is required
+        //  hashtable and some extra management is required
         if (lp == LPID) {
             // Call the appropriate user event handler
             user_register_event_handler(node, id);
@@ -308,8 +308,8 @@ static void notify_migration_event_handler(int id, int to) {
     #endif
 
     // The GAIA framework has decided that a local SE has to be migrated,
-    //	the migration can NOT be executed immediately because the SE
-    //	could be the destination of some "in flight" messages
+    //  the migration can NOT be executed immediately because the SE
+    //  could be the destination of some "in flight" messages
     if ((node = hash_lookup(table, id)))  {
         /* Now it is updated the list of SEs that are enabled to migrate (flagged) */
         list_add(mlist, node);
@@ -321,7 +321,7 @@ static void notify_migration_event_handler(int id, int to) {
         user_notify_migration_event_handler();
     }
     // Just before the end of the current timestep, the migration list will be emptied
-    //	and the pending migrations will be executed
+    //  and the pending migrations will be executed
 }
 
 /*! \brief Manages the "migration notification" of external SEs
@@ -331,8 +331,8 @@ static void notify_ext_migration_event_handler(int id, int to) {
     hash_node_t *node;
 
     // A migration that does not directly involve the local LP is going to happen in
-    //	the simulation. In some special cases the local LP has to take care of
-    //	this information
+    //  the simulation. In some special cases the local LP has to take care of
+    //  this information
     if ((node = hash_lookup(table, id)))  {
         node->data->lp = to;                // Destination LP of the migration
         node->data->s_state.changed = YES;
@@ -357,7 +357,7 @@ static void  migration_event_handler(int id, Msg *msg) {
         hash_insert(LSE, stable, node->data, node->data->key, LPID);
 
         // Call the appropriate user event handler
-        user_migration_event_handler(node, id, msg);
+        user_migration_event_handler(node, id, *msg);
     }
 }
 
@@ -365,7 +365,7 @@ static void  migration_event_handler(int id, Msg *msg) {
 
 
 /* ************************************************************************ */
-/*                  U T I L S				                                */
+/*                  U T I L S                                               */
 /* ************************************************************************ */
 
 /*! \brief Loading the configuration file of the simulator
@@ -460,7 +460,7 @@ static void generate_hashrates(int nodes) {
 
 
 /* ************************************************************************ */
-/*                  M A I N				                                    */
+/*                  M A I N                                                 */
 /* ************************************************************************ */
 
 int main(int argc, char *argv[]) {
@@ -488,7 +488,7 @@ int main(int argc, char *argv[]) {
     double Ts;                          // Current timestep
     Msg *  msg;                         // Generic message
 
-    //int migrated_in_this_step;          // Number of entities migrated in this step, in the local LP
+    int migrated_in_this_step;          // Number of entities migrated in this step, in the local LP
 
     struct hash_node_t *tmp_node;       // Tmp variable, a node in the hash table
     char *dat_filename, *tmp_filename;  // File descriptors for simulation traces
@@ -568,11 +568,11 @@ int main(int argc, char *argv[]) {
      *
      *      Parameters:
      *      1. (SIMULATE*NLP)   Total number of simulated entities
-     *      2. (NLP)	    Number of LPs in the simulation
+     *      2. (NLP)        Number of LPs in the simulation
      *      3. (rnd_file)       Seeds file for the random numbers generator
      *      4. (NULL)           LP canonical name
-     *      5. (SIMA_HOST)	    Hostname where the SImulation MAnager is running
-     *      6. (SIMA_PORT)	    SIMA TCP port number
+     *      5. (SIMA_HOST)      Hostname where the SImulation MAnager is running
+     *      6. (SIMA_PORT)      SIMA TCP port number
      */
     LPID = GAIA_Initialize(NSIMULATE * NLP, NLP, rnd_file, NULL, SIMA_HOST, SIMA_PORT);
 
@@ -621,16 +621,16 @@ int main(int argc, char *argv[]) {
     fprintf(stdout, " OK\n#\n");
 
     fprintf(stdout, "# Data format:\n");
-    fprintf(stdout, "#\tcolumn 1:	elapsed time (seconds)\n");
-    fprintf(stdout, "#\tcolumn 2:	timestep\n");
-    fprintf(stdout, "#\tcolumn 3:	number of entities in this LP\n");
-    fprintf(stdout, "#\tcolumn 4:	number of migrating entities (from this LP)\n");
+    fprintf(stdout, "#\tcolumn 1:   elapsed time (seconds)\n");
+    fprintf(stdout, "#\tcolumn 2:   timestep\n");
+    fprintf(stdout, "#\tcolumn 3:   number of entities in this LP\n");
+    fprintf(stdout, "#\tcolumn 4:   number of migrating entities (from this LP)\n");
 
     // It is the LP that manages statistics
     if (LPID == LP_STAT) {                      // Verbose output
-        fprintf(stdout, "#\tcolumn 5:	local communication ratio (percentage)\n");
-        fprintf(stdout, "#\tcolumn 6:	remote communication ratio (percentage)\n");
-        fprintf(stdout, "#\tcolumn 7:	total number of migrations in this timestep\n");
+        fprintf(stdout, "#\tcolumn 5:   local communication ratio (percentage)\n");
+        fprintf(stdout, "#\tcolumn 6:   remote communication ratio (percentage)\n");
+        fprintf(stdout, "#\tcolumn 7:   total number of migrations in this timestep\n");
     }
     fprintf(stdout, "#\n");
 
@@ -639,7 +639,7 @@ int main(int argc, char *argv[]) {
     ASSERT((data != NULL), ("simulation main: malloc error, receiving buffer NOT allocated!"));
 
     // Before starting the real simulation tasks, the model level can initialize some
-    //	data structures and set parameters
+    //  data structures and set parameters
     user_bootstrap_handler();
 
     /* Main simulation loop, receives messages and calls the handler associated with them */
@@ -656,14 +656,14 @@ int main(int argc, char *argv[]) {
         //  message handlers
         switch (msg_type) {
         // The migration of a locally managed SE has to be done,
-        //	calling the appropriate handler to insert the SE identifier
-        //	in the list of pending migrations
+        //  calling the appropriate handler to insert the SE identifier
+        //  in the list of pending migrations
         case NOTIF_MIGR:
             notify_migration_event_handler(from, to);
             break;
 
         // A migration has been executed in the simulation but the local
-        //	LP is not directly involved in the migration execution
+        //  LP is not directly involved in the migration execution
         case NOTIF_MIGR_EXT:
             notify_ext_migration_event_handler(from, to);
             break;
@@ -674,37 +674,37 @@ int main(int argc, char *argv[]) {
             break;
 
         // The local LP is the receiver of a migration and therefore a new
-        //	SE has to be managed in this LP. The handler is responsible
-        //	to allocate the necessary space in the LP data structures
-        //	and in the following to copy the SE state that is contained
-        //	in the migration message
+        //  SE has to be managed in this LP. The handler is responsible
+        //  to allocate the necessary space in the LP data structures
+        //  and in the following to copy the SE state that is contained
+        //  in the migration message
         case EXEC_MIGR:
             migration_event_handler(from, msg);
             break;
 
         // End Of Step:
-        //	the current simulation step is finished, some pending operations
-        //	have to be performed
+        //  the current simulation step is finished, some pending operations
+        //  have to be performed
         case EOS:
             // Stopping the execution timer
-            //	(to record the execution time of each timestep)
+            //  (to record the execution time of each timestep)
             TIMER_NOW(t2);
 
             /*  Actions to be done at the end of each simulated timestep  */
             if (simclock < env_end_clock) { // The simulation is not finished
                 // Simulating the interactions among SEs
                 //
-                //	in the last (env_end_clock - FLIGHT_TIME) timesteps
-                //	no msgs will be sent because we wanna check if all
-                //	sent msgs are correctly received
+                //  in the last (env_end_clock - FLIGHT_TIME) timesteps
+                //  no msgs will be sent because we wanna check if all
+                //  sent msgs are correctly received
                 if (simclock < (env_end_clock - FLIGHT_TIME)) {
                     Generate_Computation_and_Interactions(NSIMULATE * NLP);
                 }
 
                 // The pending migration of "flagged" SEs has to be executed,
-                //	the SE to be migrated were previously inserted in the migration
-                //	list due to the receiving of a "NOTIF_MIGR" message sent by
-                //	the GAIA framework
+                //  the SE to be migrated were previously inserted in the migration
+                //  list due to the receiving of a "NOTIF_MIGR" message sent by
+                //  the GAIA framework
                 //migrated_in_this_step = ScanMigrating();
 
                 // The LP that manages statistics prints out them
@@ -717,11 +717,11 @@ int main(int argc, char *argv[]) {
 
                     // Printed fields:
                     //  elapsed Wall-Clock-Time up to this step
-                    //	timestep number
-                    //	number of entities in this LP
-                    //	percentage of local communications (intra-LP)
-                    //	percentage of remote communications (inter-LP)
-                    //	number of migrations in this timestep
+                    //  timestep number
+                    //  number of entities in this LP
+                    //  percentage of local communications (intra-LP)
+                    //  percentage of remote communications (inter-LP)
+                    //  number of migrations in this timestep
 
                     // Total number of interactions (in the timestep)
                     #ifdef DEBUG
@@ -760,7 +760,7 @@ int main(int argc, char *argv[]) {
             tmp_node = validation_model_events(from, to, msg);
 
             // The appropriate handler is defined at model level
-            user_model_events_handler(to, from, msg, tmp_node);
+            user_model_events_handler(to, from, *msg, tmp_node);
             break;
 
         default:

@@ -57,7 +57,7 @@ typedef struct blockchain_element {
 /*! \brief Static part of the SE state */
 typedef struct static_data_t {
     #ifdef FORKING
-    Block   *  heads[10];                     // head blocks of the forks
+    Block     heads[10];                     // head blocks of the forks
     #endif                          
     char      changed;                        // ON if there has been a state change in the last timestep
     char      freerider;                      // 1 if free-rider, 0 not free-rider
@@ -65,7 +65,7 @@ typedef struct static_data_t {
     float     time_of_next_check;             // Timestep in which the next check for new block will be created and sent
     Block     blockchain[2500];               // Array of blocks
     #ifdef DOS
-    short     received;
+    short     received;                       //0 not received anything, !=0 received the message, -1 received the message back in the fluff phase
     #endif
 } static_data_t;
 

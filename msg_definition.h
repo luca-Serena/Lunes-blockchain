@@ -42,9 +42,9 @@ struct _trans_static_part {
     unsigned short ttl;                     // Time-To-Live
     int            transid;                 // Message Identifier
     unsigned int   creator;                 // ID of the original sender of the message
-    #ifdef DEGREE_DEPENDENT_GOSSIP_SUPPORT
+   // #ifdef DEGREE_DEPENDENT_GOSSIP_SUPPORT
     unsigned int   num_neighbors;           // Number of neighbors of forwarder
-    #endif
+    //#endif
 };
 //
 /*! \brief Transaction message */
@@ -103,7 +103,7 @@ struct _block_static_part {
     char           type;                       // Message type
     float          timestamp;                  // Timestep of creation (of the message)
     unsigned short ttl;                        // Time-To-Live
-    Block *        minedblock;                 // Block mined
+    Block          minedblock;                 // Block mined
     unsigned int   creator;                    // ID of the original sender of the message
 };
 //

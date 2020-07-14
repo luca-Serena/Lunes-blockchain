@@ -60,8 +60,8 @@ int main(int argc, char *argv[]) {
     fflush(stdout);
 
     while ((int)(result) != 1) {
-        //igraph_erdos_renyi_game(&graph, IGRAPH_ERDOS_RENYI_GNM, nodes, edges, IGRAPH_UNDIRECTED, IGRAPH_NO_LOOPS);
-         igraph_watts_strogatz_game(&graph, /*dim=*/ 1, /*size=*/ nodes, /*nei=*/ edges_per_node, /*p=*/ 0.1, /*loops=*/ 0, /*multiple=*/ 0);
+        igraph_erdos_renyi_game(&graph, IGRAPH_ERDOS_RENYI_GNM, nodes, edges, IGRAPH_UNDIRECTED, IGRAPH_NO_LOOPS);
+        //igraph_watts_strogatz_game(&graph, /*dim=*/ 1, /*size=*/ nodes, /*nei=*/ edges_per_node, /*p=*/ 0.1, /*loops=*/ 0, /*multiple=*/ 0);
         // igraph_k_regular_game(&graph, nodes, edges_per_node, 0, 0);
         igraph_is_connected(&graph, &result, IGRAPH_STRONG);
         igraph_diameter(&graph, &diameter, 0, 0, 0, IGRAPH_UNDIRECTED, 1);
