@@ -68,7 +68,7 @@ export MFACTOR=1.2
 export LOAD=0
 export MAX_TTL=14 # DEFAULT=16
 export FREERIDER="0"
-export DISSEMINATION=6 # 0 = BROADCAST, 7 = DDF2
+export DISSEMINATION=1 # 0 = BROADCAST, 7 = DDF2
 export BROADCAST_PROB_THRESHOLD=70
 export FIXED_PROB_THRESHOLD=70
 export DANDELION_STEPS_FLUFF_PHASE=12
@@ -76,8 +76,8 @@ export PROBABILITY_FUNCTION=2DIFFICULTY
 export FUNC_COEFF_HIGHER=4
 export FUNC_COEFF_LOWER=74
 export FUNCTION_COEFFICIENT="$FUNC_COEFF_HIGHER.$FUNC_COEFF_LOWER"
-export NUMBER_HEADS=5
-export INTERMEDIATE_STEPS=8 #after (INTERMEDIATE_STEPS - 1) steps of the simulation just for receiving messages you try to mine a block, usually slightly larger than diameter
+export NUMBER_HEADS=10
+export INTERMEDIATE_STEPS=6 #after (INTERMEDIATE_STEPS - 1) steps of the simulation just for receiving messages you try to mine a block, usually slightly larger than diameter
 export END_CLOCK=$((5000 * $INTERMEDIATE_STEPS)) #5000 steps in which it's possible to mine a block, the others are just to propagate messages
 export MINERS_COUNT=60 # Percentage of miners
 export DIFFICULTY=$(http --json https://api.blockchain.info/stats | jq -r '.difficulty')
@@ -130,7 +130,7 @@ if [[ -z "$TEST" ]]; then
     echo "Starting SIMA (waiting for $NLP LPs)..."
     ./sima "$NLP" &
   fi
-  $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ > "test_normal.txt"
+  $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ #> "test_normal.txt"
   echo "End time: $(date)"
   exit -1
 fi
@@ -196,80 +196,4 @@ if [[ "${TEST}" == "dos" ]]; then
 fi
 
 : <<'END'
-
-# Attack DOS (filtering messages of a node victim)
-if [[ "${TEST}" == "dos" ]]; then
-  if grep -E '^#define TXDEBUG' sim-parameters.h; then
-    export END_CLOCK=150
-    #export MINERS_COUNT=0.20
-    #export SMH=10000
-    mkdir -p "./outputs"
-
-    # Create a baseline
-    if [ $HOST == "$HOSTNAME" ] || [ $HOST == "localhost" ]; then
-      echo "Starting SIMA (waiting for $NLP LPs)..."
-      ./sima "$NLP" &
-    fi
-    echo -e "Creating \\e[33m\\e[5mBaseline\\e[0m"
-    $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ >"./outputs/test-DOS-0.txt"
-
-    # Split the test into 3 batch: too much disk space is required
-    MAXRUN=100
-    for i in $(seq 1 10 $MAXRUN); do
-    #for i in $(seq 1 2 $MAXRUN); do
-      # SImulation MAnager (SIMA) execution
-      echo "Start time: $(date)"
-      if [ $HOST == "$HOSTNAME" ] || [ $HOST == "localhost" ]; then
-        echo "Starting SIMA (waiting for $NLP LPs)..."
-        ./sima "$NLP" &
-      fi
-      echo -e "Testing DoS \\e[33m\\e[5m${i}/${MAXRUN}/1\\e[0m"
-      $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --dos "${i}" >"./outputs/test-DOS-${i}.txt"
-      echo "End time: $(date)"
-    done
-
-    MAXRUN=$((5000))
-    #for i in $(seq 100 200 $MAXRUN); do
-    for i in $(seq 100 400 $MAXRUN); do
-      # SImulation MAnager (SIMA) execution
-      echo "Start time: $(date)"
-      if [ $HOST == "$HOSTNAME" ] || [ $HOST == "localhost" ]; then
-        echo "Starting SIMA (waiting for $NLP LPs)..."
-        ./sima "$NLP" &
-      fi
-      echo -e "Testing DoS \\e[33m\\e[5m${i}/${MAXRUN}/2\\e[0m"
-      $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --dos "${i}" >"./outputs/test-DOS-${i}.txt"
-      echo "End time: $(date)"
-    done
-
-    MAXRUN=$((10000 - 1))
-    for i in $(seq 5000 500 $MAXRUN); do
-      # SImulation MAnager (SIMA) execution
-      echo "Start time: $(date)"
-      if [ $HOST == "$HOSTNAME" ] || [ $HOST == "localhost" ]; then
-        echo "Starting SIMA (waiting for $NLP LPs)..."
-        ./sima "$NLP" &
-      fi
-      echo -e "Testing DoS \\e[33m\\e[5m${i}/${MAXRUN}/3\\e[0m"
-      $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --dos "${i}" >"./outputs/test-DOS-${i}.txt"
-      echo "End time: $(date)"
-    done
-
-    # Just for fun!
-    # SImulation MAnager (SIMA) execution
-    echo "Start time: $(date)"
-    if [ $HOST == "$HOSTNAME" ] || [ $HOST == "localhost" ]; then
-      echo "Starting SIMA (waiting for $NLP LPs)..."
-      ./sima "$NLP" &
-    fi
-    echo -e "Testing DoS \\e[33m\\e[5mfor fun!\\e[0m"
-    $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ --dos 9999 >"./outputs/test-DOS-9999.txt"
-    echo "End time: $(date)"
-
-  else
-    echo "Please enable TXDEBUG in sim-parameters.h"
-  fi
-  rm ./*.finished
-  exit -1
-fi
 END

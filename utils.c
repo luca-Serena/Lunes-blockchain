@@ -77,7 +77,7 @@ hash_node_t *hash_insert(enum HASH_TYPE type, hash_t *tptr, struct hash_data_t *
     int          h;
     // Make global
     int attacker = 37;
-    int victim   = 37;
+    //int victim   = 37;
 
     if ((tmp = hash_lookup(tptr, key))) {
         return(tmp);
@@ -128,7 +128,7 @@ hash_node_t *hash_insert(enum HASH_TYPE type, hash_t *tptr, struct hash_data_t *
         }
     }
     #ifdef DOS
-    if (number_dos_nodes > 0){
+    if (number_dos_nodes > 0){					//setting which nodes are malicious
         for (int i = 0; i < number_dos_nodes; i++){
             if (node->data->key == attackers[i]){
                 node->data->attackerid = 1;

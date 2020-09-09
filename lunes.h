@@ -38,8 +38,7 @@ double mining_probability(double, double);
 // Support functions
 void lunes_dot_tokenizer(char *, int *, int *);
 void lunes_load_graph_topology();
-#ifdef FORKING/*
-int is_in_heads(Block * , int );
+/*int is_in_heads(Block * , int );
 void replace_heads(Block *, int , Block * );
 int heads_greater_position (Block * );*/
 int minimum_pos (Block **);
@@ -47,6 +46,9 @@ typedef struct {
     Block * block;
     int from;
 } tTuple;
-#endif
-
 #endif /* __LUNES_H */
+
+#ifdef DOS
+void lunes_dos_user_control_handler(hash_node_t *);
+void lunes_dos_user_event_handler(hash_node_t *, int, Msg *);
+#endif

@@ -356,7 +356,7 @@ void execute_ask_block(double ts, hash_node_t *src, hash_node_t *dest, unsigned 
 
     msg.askblock_static.timestamp = timestamp;
     msg.askblock_static.ttl       = ttl;
-    msg.askblock_static.blockid   = blockid;    //ir represents the id in the non forking mode, the position in the forking node
+    msg.askblock_static.blockid   = blockid;    //id represents the id in the non forking mode, the position in the forking node
     msg.askblock_static.creator   = creator;
     
 

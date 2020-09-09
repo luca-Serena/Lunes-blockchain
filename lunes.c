@@ -78,7 +78,6 @@ int actual_dos_nodes;
 /*          S U P P O R T      F U N C T I O N S		                    */
 /* ************************************************************************ */
 
-#ifdef FORKING                                                //Following methods in case the forking version is used
 
 
 /*if the block with the given ID is a head block of a fork his index (of the heads list) is return; otherwise -1 is returned
@@ -125,6 +124,15 @@ int getIndexById (Block* blockchain, int latest, int id){
 // A new head block is declared.
 void replace_heads (Block ** heads, int old, Block * newBlock ){
     heads[old] = newBlock;
+
+}
+
+//Like replace_heads but it puts the new block as the first element of the heads list. 
+//That's because this way the nodes can continue the chain where their blocks appear 
+//(under the same position the block with the smallest index is selected first)
+void replace_heads_first (Block ** heads, int old, Block * newBlock ){
+        heads [old] = heads [0];
+        heads [0] = newBlock;
 }
 
 
@@ -161,7 +169,7 @@ int heads_greater_position (Block ** heads){
             if (heads[i]->position > max && heads[i]->position > 0){
         	   max = heads[i]->position;
         	   res = i;
-            }
+            } 
         } 
         else {
             break;
@@ -240,8 +248,6 @@ int is_in_blockchain (Block * blockchain, int id, int latest){
 	}
 	return ret;
 }
-
-#endif
 
 
 #ifdef TXDEBUG
@@ -737,15 +743,9 @@ void lunes_load_graph_topology() {
  */
 double mining_probability(double hashrate, double time_min) {
     int    t     = (int)time_min % 10;
-    double bonus = 0.0,
-           malus = 0.0;
+    t=6;
 
-    t = t == 0 ? 10 : t;
-    // Needed if the actual network is in steady state
-    if (t >= 8) {
-    }else {
-    }
-    return((((hashrate * env_global_hashrate / 100.0) * t) / (HASHPOW * env_difficulty)) + bonus - malus);
+    return((((hashrate * env_global_hashrate / 100.0) * t) / (HASHPOW * env_difficulty)));
 }
 
 /****************************************************************************
@@ -773,66 +773,61 @@ void lunes_user_control_handler(hash_node_t *node) {
 	        double random_mine = RND_Interval(S, 0.0, 1.0);
 	        double p           = mining_probability(node->data->hashrate, simclock);
 	        // Avoid luck
-	        if (p > random_mine && node->data->internal_timer > 2) {
-	        	#ifdef FORKING
+	        if (p > random_mine /*&& node->data->internal_timer > 2*/) {
                 Block *b = &node->data->s_state.blockchain[ltblock];
 	            int newId = RND_Interval(S, 0, MAXINT - 1);
-		        if (ltblock < 2500 - 1){    //with rispect to the non-forking version the blockchain size is increased, due to foking version producing more blocks
+		        if (ltblock < 3000 - 1){    //with rispect to the non-forking version the blockchain size is increased, due to foking version producing more blocks
 		            b->id = newId;
 		            int headPos= heads_greater_position(node->data->s_state.heads);   //we want to continue the longest chain so we get its head block
-		            if ( headPos >= 0){                                               //adding the block to the longest chain
+                    if ( headPos >= 0){                                               //adding the block to the longest chain
                         Block **  heads= node->data->s_state.heads;                   //array of pointers to head-blocks
                         Block * thatBlock = heads[headPos];                           //head block of the longest chain
 		               	b->prevId = thatBlock->id;                                    //continuing the longest chain
 		               	b->position = thatBlock->position + 1;                        //position = position of the previous node + 1
-		               	replace_heads (node->data->s_state.heads, headPos, b);        //update the main chain. The head is now the new mined node
+		               	replace_heads_first (node->data->s_state.heads, headPos, b);        //update the main chain. The head is now the new mined node
 		            } else {                //in case still no chain exists
 		            	b->prevId = -1;                                               //first block of a chain has -1 as previous block index 
                         b-> position = 1;                                             //and 1 as position             
-		                replace_heads (node->data->s_state.heads, 0, b);              //new block now replaces its previous block as head-block
+		                replace_heads_first (node->data->s_state.heads, 0, b);              //new block now replaces its previous block as head-block
 		            }
 		            node->data->latestblock += 1;                                     //number of blocks memorized in the blockchain increased by 1
 	            }
 
-	            #else
-	            if (ltblock < 1500 - 1) {
-	                // Point to the next block
-	                node->data->latestblock += 1;
-	                // Update the ID of the mined block
-	                node->data->s_state.blockchain[ltblock].id = ltblock;
-	            }
-	            #endif 
-
-	            node->data->internal_timer = 0;
 	            if (node->data->attackerid == node->data->key && selfish[2] >= 0) {
-	                // clock - nodeid - blockminedid - hashrate
-	                #ifdef FORKING   
+	                // clock - nodeid - blockminedid - hashrate  
 	                //underscore characted added in order to facilitate the recognition of the IDs
-	                fprintf(stdout, "BS: %.0f,%d,_%d,%d,%f,%d\n", simclock, node->data->key, b->id, b->prevId, node->data->hashrate, b-> position);
 	                //fprintf(stdout, "BSS: %.0f,%d,%d,%d,%f\n", simclock, node->data->key, b->id, b->position, node->data->hashrate);
-	                #else
-	                fprintf(stdout, "BSS: %.0f,%d,%d,%f\n", simclock, node->data->key, ltblock, node->data->hashrate);
-	                #endif
+	                
 	                // Update private chain
-	                #ifdef FORKING
+	                
 	                selfish[0] = newId;
-	                #else
-	                selfish[0]  = ltblock;
-	                #endif
+
 	                selfish[2] += 1;
-	                if (selfish[2] >= 2) {              //2 nodes in advantages, then propagating the mined nodes through the network
+	                if (selfish[2] >= 3) {              //2 nodes in advantages, then propagating the mined nodes through the network
 	                                                    //Head block and his previous block are spread through the network. 
-	                    #ifdef FORKING                  //in FORKING mode the indexes in the blockchain have to be found
-	                    fprintf(stdout, "possible selfish successful %d %d %d\n", selfish[0], selfish[1], selfish[2]);
+	                    fprintf(stdout, "possible selfish successful %d %d %d %d\n", selfish[0], selfish[1], selfish[2], selfish[3]);
 	                    int ind = getIndexById (&node->data->s_state.blockchain[0], node->data->latestblock, newId);
-	                    int prev = getIndexById (&node->data->s_state.blockchain[0], node->data->latestblock, node->data->s_state.blockchain[ind].prevId);
-	                    lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[prev]);
+                        int indToSpread = getIndexById (&node->data->s_state.blockchain[0], node->data->latestblock, b->prevId);    
+                        Block * bToSpread =   &node->data->s_state.blockchain[indToSpread];     
+                        //all the blocks not revealed has to be spread
+                        while (bToSpread->position > selfish[3]){                    //to check if there are previous block in the private blockchain that were not spread 
+                            lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[indToSpread]);
+                            fprintf(stdout, "BS: %.0f,%d,_%d,%d,%f,%d\n", simclock, node->data->key, bToSpread->id, bToSpread->prevId, node->data->hashrate, bToSpread-> position);
+                            if (bToSpread->prevId == -1){
+                                break;
+                            }
+                            else {
+                                indToSpread = getIndexById (&node->data->s_state.blockchain[0], node->data->latestblock, bToSpread->prevId);
+                                bToSpread = &node->data->s_state.blockchain[indToSpread]; 
+                            }
+                        }
+	                   // lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[prev]);
 	                    lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[ind]);
-	                    #else
-	                    fprintf(stdout, "possible selfish successful %d %d %d\n", selfish[0], selfish[1], selfish[2]);
-	                    lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[ltblock - 1]);
-	                    lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[ltblock]);
-	                    #endif
+                      //  fprintf(stdout, "BS: %.0f,%d,_%d,%d,%f,%d\n", simclock, node->data->key, prevBlock->id, prevBlock->prevId, node->data->hashrate, prevBlock-> position);
+                        fprintf(stdout, "BS: %.0f,%d,_%d,%d,%f,%d\n", simclock, node->data->key, b->id, b->prevId, node->data->hashrate, b-> position);
+
+                        selfish[3] = b->position;
+	                    
 	                    // Reset the count
 	                    selfish[2] = 0;
 	                }
@@ -840,11 +835,8 @@ void lunes_user_control_handler(hash_node_t *node) {
 	                // Broadcasting the mined ("old") block to all neighbors
                     lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[ltblock]);
 	                // clock - nodeid - blockminedid - hashrate
-	                #ifdef FORKING
 	                fprintf(stdout, "BS: %.0f,%d,_%d,%d,%f,%d\n", simclock, node->data->key, newId, b->prevId, node->data->hashrate, b-> position);
-	                #else
-	                fprintf(stdout, "BS: %.0f,%d,%d,%f\n", simclock, node->data->key, ltblock, node->data->hashrate);
-	                #endif
+	   
 	            }
 	            fflush(stdout);
 	        }else {
@@ -1031,7 +1023,7 @@ void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
                 // selfish[1] = latest received block from the network for the attacker
                 // selfish[2] = status of the attack (-1 = disabled, 0 active and even with the blockchain, 1
                 //              attacker is 1 block ahead, 3 attacker sent the mined block
-            	#ifdef FORKING
+                //selfish[3] = latest mined block spread to the network by the attacker
             	int pos = msg->block.block_static.minedblock->position;
             	int selfish_0_ind = getIndexById(&node->data->s_state.blockchain[0], node->data->latestblock, selfish[0]); 
             	int selfish_1_ind = getIndexById(&node->data->s_state.blockchain[0], node->data->latestblock, selfish[1]);
@@ -1044,7 +1036,10 @@ void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
                 int diff_prev =  selfish_0_pos - selfish_1_pos;                                     //advantage with respect to the network
                 if (diff_prev >= 0) {                                                               //zero blocks in advantage
                     selfish[2] = diff_prev;                                                                 
-                } 
+                } else {
+                    selfish[2] = 0;
+                    selfish[3] = selfish_1_pos;
+                }
                 /*if (diff_prev == 1) {                                                        //just one block in advantage, risk of spoiling mining effort, propagate the block
                 	int previousId = node->data->s_state.blockchain[selfish_0_ind].prevId;          
                 	int previousIndex = getIndexById (&node->data->s_state.blockchain[0], node->data->latestblock, previousId);
@@ -1054,34 +1049,9 @@ void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
                 	fprintf(stdout, "BSS: %.0f,%d,%d,%d,%f\n", simclock, node->data->key, node->data->s_state.blockchain[selfish_0_ind].id, node->data->s_state.blockchain[selfish_0_ind].position, node->data->hashrate);                   
                     selfish[2] = 0;
                 }*/
-            	#else
-                int diff_prev = selfish[0] - receivedblockid;
-                selfish[1] = receivedblockid;
-                if (diff_prev == 0) {
-                    selfish[0] = receivedblockid;
-                    selfish[2] = 0;
-                }else if (diff_prev == 1) {
-                    lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[selfish[0]]);
-                    // clock - nodeid - blockminedid - hashrate
-                    fprintf(stdout, "BSS: %.0f,%d,%d,%f\n", simclock, node->data->key, selfish[0], node->data->hashrate);
-                }else if (diff_prev == 2) {
-                    for (int b = selfish[0]; b >= 0; --b) {
-                        // Broadcasting the mined old blocks to all neighbors
-                        lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[selfish[0] - b]);
-                        // clock - nodeid - blockminedid - hashrate
-                        fprintf(stdout, "BSS: %.0f,%d,%d,%f\n", simclock, node->data->key, selfish[0] - b, node->data->hashrate);
-                    }
-                    selfish[2] = 0;
-                }else if (selfish[0] >= 0) {
-                    int first_unp_block = selfish[0] - selfish[2];
-                    lunes_send_block_to_neighbors(node, &node->data->s_state.blockchain[first_unp_block]);
-                    // clock - nodeid - blockminedid - hashrate
-                    fprintf(stdout, "BSS: %.0f,%d,%d,%f\n", simclock, node->data->key, first_unp_block, node->data->hashrate);
-                }
-                #endif
+            	
             }
 
-            #ifdef FORKING
           //  if (node->data->key !=40 || simclock < 200 || simclock > 400){  //to test if a node, (node with id =40 in this case) can easily 
          //                                                    recover previous block is disconnected from the network for 200 time steps
             Block * receivedBlock = msg->block.block_static.minedblock;
@@ -1160,84 +1130,7 @@ void lunes_user_block_event_handler(hash_node_t *node, int forwarder, Msg *msg) 
 	                                       msg->block.block_static.creator,
 	                                       forwarder);
             }//}
-            #else
-            // If the received block is the next one in the local blockchain add it
-            if (ltblock == receivedblockid) {  
-                // clock - nodeid - originalcreartor - timestamp - blockid
- 
-                fprintf(stdout, "BR: %.0f,%d,%d,%.0f,%d,%d\n",
-                        simclock,
-                        node->data->key,
-                        msg->block.block_static.creator,
-                        msg->block.block_static.timestamp,
-                        receivedblockid);
-                node->data->s_state.blockchain[ltblock].id = ltblock;
-
-                // It has not been received, increment latestblock and add all transactions
-                node->data->internal_timer = 0;
-           
-                // (add the block to the blockchain)
-                node->data->latestblock += 1;
-                // store only the pointer to reduce RAM usage
-                node->data->s_state.blockchain[ltblock] = *msg->block.block_static.minedblock;
-                #ifdef TXDEBUG
-                //for (int b = 0; b < msg->block.block_static.minedblock->latesttrans; ++b) {
-                //    node->data->s_state.blockchain[ltblock].trans[b].id   = msg->block.block_static.minedblock->trans[b].id;
-                //    node->data->s_state.blockchain[ltblock].trans[b].from = msg->block.block_static.minedblock->trans[b].from;
-                //    node->data->s_state.blockchain[ltblock].trans[b].to   = msg->block.block_static.minedblock->trans[b].to;
-                //}
-                #endif
-
-                // Dissemination (to some of) the neighbors
-                // NOTE: the TTL is being decremented here!
-                lunes_forward_to_neighbors(node,
-                                           msg,
-                                           --(msg->block.block_static.ttl),
-                                           msg->block.block_static.timestamp,
-                                           msg->block.block_static.creator,
-                                           forwarder);
-            }else {
-                // If the node's blockchain is not updated ask the neighbors for the current blocks
-                // If the node is mining the ltblock and the message is for ltblock + 1 we need to
-                // ask for the ltblock
-                if (msg->block.block_static.minedblock->id > node->data->latestblock) {
-                    GHashTableIter iter;
-                    gpointer       key, destination;
-                    hash_node_t *  sender, *receiver; // Sender and receiver nodes in the global hashtable
-
-                    g_hash_table_iter_init(&iter, node->data->state);
-                    while (g_hash_table_iter_next(&iter, &key, &destination)) {
-                        sender   = hash_lookup(stable, node->data->key);             // This node
-                        receiver = hash_lookup(table, *(unsigned int *)destination); // The neighbor
-                        execute_ask_block(simclock + FLIGHT_TIME,
-                                          sender,
-                                          receiver,
-                                          env_max_ttl,
-                                          node->data->latestblock,
-                                          simclock + FLIGHT_TIME,
-                                          node->data->key);
-                    }
-
-                    #ifdef ASKBLOCKDEBUG
-                    // clock - nodeid - blockid
-                    fprintf(stdout, "ABS: %.0f,%d,%d\n", simclock, node->data->key, node->data->latestblock);
-                    #endif
-                }
-
-                #ifdef STALEBLOCKDEBUG
-                // Block is stale
-                // clock - nodeid - originalcreartor - timestamp - blockid - latestblock
-                fprintf(stdout, "BRS: %.0f,%d,%d,%.0f,%d,%d\n",
-                        simclock, node->data->key,
-                        msg->block.block_static.creator,
-                        msg->block.block_static.timestamp,
-                        msg->block.block_static.minedblock->id,
-                        node->data->latestblock);
-                fflush(stdout);
-                #endif
-                
-            }
-            #endif
+            
         }else {
             // This node is a free-rider (i.e. no cache management, no forwarding)
             #ifdef FREERIDINGDEBUG
@@ -1259,7 +1152,6 @@ void lunes_user_askblock_event_handler(hash_node_t *node, int forwarder, Msg *ms
         // The TTL is still OK
         // If the received block is in the local blockchain send it
       
-        #ifdef FORKING
         int still=1;                                                        //boolean. 1 if there are still blocks to ask for
         int from =0;                                                        //index where starting to search for a block of a given position
         while (still == 1){                                                 
@@ -1272,12 +1164,6 @@ void lunes_user_askblock_event_handler(hash_node_t *node, int forwarder, Msg *ms
               still = 0;
 	        }
 	    }
-        #else
-
-        if (node->data->latestblock > msg->askblock.askblock_static.blockid && node->data->attackerid == node->data->key) {
-            lunes_responde_ask_block(node, &node->data->s_state.blockchain[msg->askblock.askblock_static.blockid], msg->askblock.askblock_static.creator);
-        }
-        #endif
     }
 }
 
@@ -1313,8 +1199,9 @@ void lunes_dos_user_control_handler(hash_node_t *node) {
                 msg.trans_static.ttl       = env_max_ttl;
               //  msg.trans_static.transid   = RND_Interval(S, 0, MAXINT - 1);
                 msg.trans_static.creator   = node->data->key;
+                Msg m = (Msg) msg;
                 lunes_forward_to_neighbors(node,
-                                               &msg,
+                                               &m,
                                                --(msg.trans_static.ttl),
                                                msg.trans_static.timestamp,
                                                msg.trans_static.creator,
@@ -1343,8 +1230,9 @@ void lunes_dos_user_control_handler(hash_node_t *node) {
             msg.trans_static.ttl       = env_dandelion_fluff_steps -1;               //just go to the fluff phase, broadcast the transaction
           //  msg.trans_static.transid   = RND_Interval(S, 0, MAXINT - 1);
             msg.trans_static.creator   = victim;
+            Msg m = (Msg) msg;
             lunes_forward_to_neighbors(node,
-                                           &msg,
+                                           &m,
                                            --(msg.trans_static.ttl),
                                            msg.trans_static.timestamp,
                                            msg.trans_static.creator,

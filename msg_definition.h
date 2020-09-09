@@ -42,9 +42,9 @@ struct _trans_static_part {
     unsigned short ttl;                     // Time-To-Live
     int            transid;                 // Message Identifier
     unsigned int   creator;                 // ID of the original sender of the message
-    #ifdef DEGREE_DEPENDENT_GOSSIP_SUPPORT
+   // #ifdef DEGREE_DEPENDENT_GOSSIP_SUPPORT
     unsigned int   num_neighbors;           // Number of neighbors of forwarder
-    #endif
+    //#endif
 };
 //
 /*! \brief Transaction message */
