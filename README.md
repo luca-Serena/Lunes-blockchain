@@ -128,18 +128,18 @@ The command will generate a `/doc` folder (ignored by the repository indexing) w
 - `html`: for the HTML report (open the `index.html`)
 - `latex`: run `make` inside this folder to generate the PDF report named `refman.pdf`
 
-## 51%
+### 51%
 
 This execution mode will run 100 times the main simulation using an increasing value of the hashrate of an attacker (by default the `attackerid` is 337).
  
 Output of this tests can be found in `./outputs` directory with the name: `test-51-H.txt` with **H** the value of the attacker's hashrate.
 
-## Selfish mining
+### Selfish mining
 Also here the execution will run 100 times the main simulation using an increasing value of the hashrate of an attacker
 
 Output of this tests can be found in `./outputs` directory with the name: `test-selfish-H.txt` with **H** the value of the attacker's hashrate.
 
-# DOS
+### DOS
 The execution is divided into epochs, each one last the same number of steps as the time to live for messages. In every epoch a victim node is chosen and it's evaluated the percentage of nodes among the honest ones that manage to receive a message. 
 
 Output of this tests can be found in `./outputs` directory with the name: `test-dos-H.txt` with **H** the percentage of malicious nodes in the network.
