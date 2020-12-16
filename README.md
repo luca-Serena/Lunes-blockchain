@@ -103,26 +103,6 @@ The format of each data section is:
 
 ### Evaluation 
 
--- no forking mode --
-
-Executions outputs can be parsed using the Python script [`get_results.py`](./get_results.py). The script can plots all mined block within a time for all nodes or for a specified node ID, prints the blockchain stored for a node, the best miner and find if a block has received a transaction. There's no main routine and no argument parsing (for the moment). Output file size is at least `200MB` without enabling extra logging.
-
-`python get_results.py test.txt`
-
-Each line of the output is parsed and mapped into a dictionary and inserted into an array:
-
-```python
-# BS  clock - nodeid - blockminedid - hashrate
-def parse_mined_block(arr):
-    data = list(map(str.strip, arr.split(",")))
-    if len(data) == 4:
-        return dict(zip(["clock", "nodeid", "blockid", "hashrate"], data))
-    else:
-        print("Wrong set", inspect.stack()[0][3])
-```
-
-This script requires Python3 and [`matplotlib`](https://matplotlib.org/) installed.
-
 -- forking mode --
 
 To evaluate the outcome of 51% attack run the script evaluate51.sh
