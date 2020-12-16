@@ -28,4 +28,6 @@ or:
 
 The output of evaluateSelfish.sh will be a file with tuples in the following format:
 		hashrate of the attacker  -- number of succeded attacks
+		
+Finally, in order to evaluate dos attack an alternative lighter version of lunes-blockchain is run, since there is no need to reproduce the whole blockchain behaviour. The attack is evaluated as the percentage of honest nodes receinving the message by the victim and the final result is the average of several epochs, changing each time the victim node. Attackers are chosen randomly.
 
