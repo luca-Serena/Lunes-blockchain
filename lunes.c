@@ -414,20 +414,10 @@ void lunes_real_forward(hash_node_t *node, Msg *msg, unsigned short ttl, float t
             g_hash_table_iter_init (&iter, node->data->state);
             txid = msg->trans.trans_static.transid;
             if (ttl >= env_dandelion_fluff_steps ){                   //stem phase
-                int neighbors = node->data->num_neighbors;
-                int selectedIndex = RND_Interval(S, 0, neighbors - 1);            //just sending the message to the neighbor of that index
-                int iterIndex = 0;
-                while (g_hash_table_iter_next (&iter, &key, &destination)) {
-
-                    sender = hash_lookup(stable, node->data->key);                      // This node
-                    receiver = hash_lookup(table, *(unsigned int *)destination);        // The neighbor
-
-                    if (iterIndex == selectedIndex){                 //message just sent to the neighbor of index selectedIndex, generated randomly
-                        execute_trans (simclock + FLIGHT_TIME, sender, receiver, ttl, txid, from, to, timestamp, creator);
-                        break;
-                    }
-                    iterIndex++;
-                }
+                sender   = hash_lookup(stable, node->data->key);             // This node
+                destination = hash_table_random_key(node->data->state);                    
+                receiver = hash_lookup(table, *(unsigned int *)destination);        // The neighbor
+                execute_request (simclock + FLIGHT_TIME, sender, receiver, ttl, id, timestamp, creator);
             } else {                                                                //fluff phase, sending messages to everyone, except the forwarder
                 while (g_hash_table_iter_next (&iter, &key, &destination)) {
 
