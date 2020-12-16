@@ -61,8 +61,6 @@ For example to run a simple simulation execute `./run-blockchain -n 1000`. This 
 // request for specific blocks from peers: prints all msg to ask a peer for a specific block
 #define ASKBLOCKDEBUG
 
-// activation of the new configuration with forking allowed
-#define FORKING
 //
 // defining DOS it's possible to simulate the Denial of Service attack
 #define DOS
