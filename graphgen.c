@@ -20,7 +20,7 @@
  #
  */
 
-#include <igraph.h>
+#include <igraph/igraph.h>
 #include <stdlib.h>
 
 void print_usage() {
