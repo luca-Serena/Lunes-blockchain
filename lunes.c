@@ -417,7 +417,7 @@ void lunes_real_forward(hash_node_t *node, Msg *msg, unsigned short ttl, float t
                 sender   = hash_lookup(stable, node->data->key);             // This node
                 destination = hash_table_random_key(node->data->state);                    
                 receiver = hash_lookup(table, *(unsigned int *)destination);        // The neighbor
-                execute_request (simclock + FLIGHT_TIME, sender, receiver, ttl, id, timestamp, creator);
+                execute_trans (simclock + FLIGHT_TIME, sender, receiver, ttl, txid, from, to, timestamp, creator);
             } else {                                                                //fluff phase, sending messages to everyone, except the forwarder
                 while (g_hash_table_iter_next (&iter, &key, &destination)) {
 
