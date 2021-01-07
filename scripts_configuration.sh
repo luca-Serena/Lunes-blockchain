@@ -45,7 +45,7 @@ LPS=1
 #
 #	Total number of runs per each configuration
 #	(for statistical purposes)
-NUMBERRUNS=10
+NUMBERRUNS=1
 #
 #       Numerical value of the first run
 #       (it can useful to produce results that will be combined together at a later stage)
