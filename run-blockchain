@@ -130,7 +130,7 @@ if [[ -z "$TEST" ]]; then
     echo "Starting SIMA (waiting for $NLP LPs)..."
     ./sima "$NLP" &
   fi
-  $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ #> "test_normal.txt"
+  $DEBUG ./blockchain "$NLP" $SMH ${TRACE_DIRECTORY}/test_btc_ > "test_normal.txt"
   echo "End time: $(date)"
   exit -1
 fi
