@@ -470,7 +470,7 @@ int main(int argc, char *argv[]) {
     }
     char msg_type,                      // Type of message
          *data,                         // Buffer for incoming messages, dynamic allocation
-         *rnd_file = "Rand2.seed";      // File containing seeds for the random numbers generator
+         *rnd_file = "Rand.seed";      // File containing seeds for the random numbers generator
 
     int count,                          // Number of SEs to simulate in the local LP
         start,                          // First identifier (ID) to be used to tag the locally managed SEs
